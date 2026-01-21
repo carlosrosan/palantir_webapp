@@ -1,0 +1,307 @@
+{% extends 'maintenance/base.html' %}
+
+{% block title %}{{ asset.asset_name }} - Asset Details{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{{ asset.asset_name }}</h2>
+    <a href="{% url 'maintenance:asset_list' %}" class="link-button">← Back to Asset List</a>
+    
+    <div style="margin-top: 2rem;">
+        <h3>Asset Information</h3>
+        <table>
+            <tr>
+                <th>Asset ID</th>
+                <td>{{ asset.asset_id }}</td>
+            </tr>
+            <tr>
+                <th>Asset Type</th>
+                <td>{{ asset.asset_type }}</td>
+            </tr>
+            <tr>
+                <th>Location</th>
+                <td>{{ asset.location }}</td>
+            </tr>
+            <tr>
+                <th>Installation Date</th>
+                <td>{{ asset.installation_date }}</td>
+            </tr>
+            <tr>
+                <th>Manufacturer</th>
+                <td>{{ asset.manufacturer|default:"N/A" }}</td>
+            </tr>
+            <tr>
+                <th>Model Number</th>
+                <td>{{ asset.model_number|default:"N/A" }}</td>
+            </tr>
+            <tr>
+                <th>Status</th>
+                <td>
+                    <span class="badge badge-{{ asset.status }}">
+                        {{ asset.status|title }}
+                    </span>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+{% if asset.failure_probability %}
+<div class="card">
+    <h2>Failure Probability Analysis</h2>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Probability Score</h3>
+            <div class="value">{{ asset.failure_probability.probability_score|floatformat:2 }}%</div>
+        </div>
+        <div class="stat-card">
+            <h3>Risk Level</h3>
+            <div class="value">
+                <span class="badge badge-{{ asset.failure_probability.risk_level }}">
+                    {{ asset.failure_probability.risk_level|title }}
+                </span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <h3>Unresolved Failures</h3>
+            <div class="value">{{ asset.failure_probability.unresolved_failures }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Sensor Warnings</h3>
+            <div class="value">{{ asset.failure_probability.warning_count }}</div>
+        </div>
+    </div>
+    <table>
+        <tr>
+            <th>Failure Count (Last 365 days)</th>
+            <td>{{ asset.failure_probability.failure_count }}</td>
+        </tr>
+        <tr>
+            <th>Warning Count (Last 30 days)</th>
+            <td>{{ asset.failure_probability.warning_count }}</td>
+        </tr>
+        <tr>
+            <th>Critical Sensor Count</th>
+            <td>{{ asset.failure_probability.critical_sensor_count }}</td>
+        </tr>
+        <tr>
+            <th>Days Since Last Maintenance</th>
+            <td>{{ asset.failure_probability.days_since_maintenance|default:"N/A" }}</td>
+        </tr>
+        <tr>
+            <th>Asset Age (Days)</th>
+            <td>{{ asset.failure_probability.asset_age_days|default:"N/A" }}</td>
+        </tr>
+        <tr>
+            <th>Last Calculated</th>
+            <td>{{ asset.failure_probability.calculation_date }}</td>
+        </tr>
+    </table>
+</div>
+{% endif %}
+
+{% if asset.maintenance_cost %}
+<div class="card">
+    <h2>Maintenance Cost Analysis</h2>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Cost</h3>
+            <div class="value">${{ asset.maintenance_cost.total_cost|floatformat:2 }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Last 12 Months</h3>
+            <div class="value">${{ asset.maintenance_cost.cost_last_12m|floatformat:2 }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Avg Monthly Cost</h3>
+            <div class="value">${{ asset.maintenance_cost.avg_monthly_cost|floatformat:2 }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Cost Trend</h3>
+            <div class="value">{{ asset.maintenance_cost.cost_trend|title }}</div>
+        </div>
+    </div>
+    <table>
+        <tr>
+            <th>Maintenance Cost</th>
+            <td>${{ asset.maintenance_cost.maintenance_cost|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <th>Repair Cost</th>
+            <td>${{ asset.maintenance_cost.repair_cost|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <th>Upgrade Cost</th>
+            <td>${{ asset.maintenance_cost.upgrade_cost|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <th>Other Costs</th>
+            <td>${{ asset.maintenance_cost.other_cost|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <th>Cost Last 6 Months</th>
+            <td>${{ asset.maintenance_cost.cost_last_6m|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <th>Cost Last 3 Months</th>
+            <td>${{ asset.maintenance_cost.cost_last_3m|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <th>Cost Per Day</th>
+            <td>${{ asset.maintenance_cost.cost_per_day|floatformat:4 }}</td>
+        </tr>
+        <tr>
+            <th>Last Cost Date</th>
+            <td>{{ asset.maintenance_cost.last_cost_date|default:"N/A" }}</td>
+        </tr>
+    </table>
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>Recent Costs</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Description</th>
+                <th>Vendor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cost in recent_costs %}
+            <tr>
+                <td>{{ cost.cost_date }}</td>
+                <td>{{ cost.cost_type|title }}</td>
+                <td>${{ cost.amount|floatformat:2 }}</td>
+                <td>{{ cost.description|truncatewords:10 }}</td>
+                <td>{{ cost.vendor|default:"N/A" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center;">No cost records found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Recent Failures</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Severity</th>
+                <th>Description</th>
+                <th>Resolved</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for failure in recent_failures %}
+            <tr>
+                <td>{{ failure.failure_date }}</td>
+                <td>{{ failure.failure_type }}</td>
+                <td>
+                    <span class="badge badge-{{ failure.severity }}">
+                        {{ failure.severity|title }}
+                    </span>
+                </td>
+                <td>{{ failure.description|truncatewords:15 }}</td>
+                <td>
+                    {% if failure.resolved %}
+                        <span class="badge badge-low">Yes</span>
+                    {% else %}
+                        <span class="badge badge-critical">No</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center;">No failure records found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Recent Sensor Readings</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Sensor Name</th>
+                <th>Type</th>
+                <th>Value</th>
+                <th>Unit</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reading in recent_sensor_readings %}
+            <tr>
+                <td>{{ reading.reading_timestamp }}</td>
+                <td>{{ reading.sensor_name }}</td>
+                <td>{{ reading.sensor_type|title }}</td>
+                <td>{{ reading.reading_value }}</td>
+                <td>{{ reading.unit }}</td>
+                <td>
+                    <span class="badge badge-{{ reading.status }}">
+                        {{ reading.status|title }}
+                    </span>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center;">No sensor readings found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Recent Maintenance Orders</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Type</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Scheduled Date</th>
+                <th>Estimated Cost</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in recent_orders %}
+            <tr>
+                <td>{{ order.order_id }}</td>
+                <td>{{ order.order_type|title }}</td>
+                <td>
+                    <span class="badge badge-{{ order.priority }}">
+                        {{ order.priority|title }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge badge-{{ order.status }}">
+                        {{ order.status|title }}
+                    </span>
+                </td>
+                <td>{{ order.scheduled_date|default:"N/A" }}</td>
+                <td>${{ order.estimated_cost|default:"N/A"|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center;">No maintenance orders found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

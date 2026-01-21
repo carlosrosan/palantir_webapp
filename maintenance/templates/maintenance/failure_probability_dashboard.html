@@ -1,0 +1,213 @@
+{% extends 'maintenance/base.html' %}
+
+{% block title %}Failure Probability Dashboard{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Failure Probability Dashboard</h2>
+    
+    <div class="filters">
+        <form method="get">
+            <div>
+                <label for="risk_level">Risk Level:</label>
+                <select name="risk_level" id="risk_level">
+                    <option value="">All Risk Levels</option>
+                    {% for level in risk_levels %}
+                    <option value="{{ level }}" {% if current_filter.risk_level == level %}selected{% endif %}>{{ level|title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <button type="submit">Filter</button>
+                <a href="{% url 'maintenance:failure_probability_dashboard' %}" class="link-button" style="margin-left: 0.5rem; padding: 0.5rem 1rem;">Clear</a>
+            </div>
+        </form>
+    </div>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Assets</h3>
+            <div class="value">{{ total_assets }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Critical Risk Assets</h3>
+            <div class="value">{{ critical_assets.count }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Unresolved Failures</h3>
+            <div class="value">{{ assets_with_unresolved.count }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Assets with Warnings</h3>
+            <div class="value">{{ assets_with_warnings.count }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Risk Level Distribution</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Risk Level</th>
+                <th>Count</th>
+                <th>Average Probability</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dist in risk_distribution %}
+            <tr>
+                <td>
+                    <span class="badge badge-{{ dist.risk_level }}">
+                        {{ dist.risk_level|title }}
+                    </span>
+                </td>
+                <td>{{ dist.count }}</td>
+                <td>
+                    {% for avg in avg_probability_by_risk %}
+                        {% if avg.risk_level == dist.risk_level %}
+                            {{ avg.avg_probability|floatformat:2 }}%
+                        {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" style="text-align: center;">No data available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Top 10 Highest Risk Assets</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Asset ID</th>
+                <th>Asset Name</th>
+                <th>Type</th>
+                <th>Probability Score</th>
+                <th>Risk Level</th>
+                <th>Failures</th>
+                <th>Warnings</th>
+                <th>Unresolved</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for asset in top_risk_assets %}
+            <tr>
+                <td>{{ asset.asset_id }}</td>
+                <td><strong>{{ asset.asset_name }}</strong></td>
+                <td>{{ asset.asset_type }}</td>
+                <td>{{ asset.failure_probability.probability_score|floatformat:2 }}%</td>
+                <td>
+                    <span class="badge badge-{{ asset.failure_probability.risk_level }}">
+                        {{ asset.failure_probability.risk_level|title }}
+                    </span>
+                </td>
+                <td>{{ asset.failure_probability.failure_count }}</td>
+                <td>{{ asset.failure_probability.warning_count }}</td>
+                <td>{{ asset.failure_probability.unresolved_failures }}</td>
+                <td>
+                    <a href="{% url 'maintenance:asset_details' asset.asset_id %}" class="link-button" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">View</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" style="text-align: center;">No assets found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Critical Risk Assets (High/Critical)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Asset ID</th>
+                <th>Asset Name</th>
+                <th>Type</th>
+                <th>Probability Score</th>
+                <th>Risk Level</th>
+                <th>Days Since Maintenance</th>
+                <th>Unresolved Failures</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for asset in critical_assets %}
+            <tr>
+                <td>{{ asset.asset_id }}</td>
+                <td><strong>{{ asset.asset_name }}</strong></td>
+                <td>{{ asset.asset_type }}</td>
+                <td>{{ asset.failure_probability.probability_score|floatformat:2 }}%</td>
+                <td>
+                    <span class="badge badge-{{ asset.failure_probability.risk_level }}">
+                        {{ asset.failure_probability.risk_level|title }}
+                    </span>
+                </td>
+                <td>{{ asset.failure_probability.days_since_maintenance|default:"N/A" }}</td>
+                <td>{{ asset.failure_probability.unresolved_failures }}</td>
+                <td>
+                    <a href="{% url 'maintenance:asset_details' asset.asset_id %}" class="link-button" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">View</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align: center;">No critical risk assets found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h2>All Assets - Failure Probability Summary</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Asset ID</th>
+                <th>Asset Name</th>
+                <th>Type</th>
+                <th>Probability Score</th>
+                <th>Risk Level</th>
+                <th>Failure Count</th>
+                <th>Warnings</th>
+                <th>Unresolved</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for asset in assets_with_probability %}
+            <tr>
+                <td>{{ asset.asset_id }}</td>
+                <td><strong>{{ asset.asset_name }}</strong></td>
+                <td>{{ asset.asset_type }}</td>
+                <td>{{ asset.failure_probability.probability_score|floatformat:2 }}%</td>
+                <td>
+                    <span class="badge badge-{{ asset.failure_probability.risk_level }}">
+                        {{ asset.failure_probability.risk_level|title }}
+                    </span>
+                </td>
+                <td>{{ asset.failure_probability.failure_count }}</td>
+                <td>{{ asset.failure_probability.warning_count }}</td>
+                <td>{{ asset.failure_probability.unresolved_failures }}</td>
+                <td>
+                    <a href="{% url 'maintenance:asset_details' asset.asset_id %}" class="link-button" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">View</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" style="text-align: center;">No assets with probability data found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

@@ -1,0 +1,109 @@
+{% extends 'maintenance/base.html' %}
+
+{% block title %}Asset List - Predictive Maintenance System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Asset List</h2>
+    
+    <div class="filters">
+        <form method="get">
+            <div>
+                <label for="asset_type">Asset Type:</label>
+                <select name="asset_type" id="asset_type">
+                    <option value="">All Types</option>
+                    {% for type in asset_types %}
+                    <option value="{{ type }}" {% if current_filters.asset_type == type %}selected{% endif %}>{{ type }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="status">Status:</label>
+                <select name="status" id="status">
+                    <option value="">All Statuses</option>
+                    {% for status in statuses %}
+                    <option value="{{ status }}" {% if current_filters.status == status %}selected{% endif %}>{{ status }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="risk_level">Risk Level:</label>
+                <select name="risk_level" id="risk_level">
+                    <option value="">All Risk Levels</option>
+                    {% for level in risk_levels %}
+                    <option value="{{ level }}" {% if current_filters.risk_level == level %}selected{% endif %}>{{ level|title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <button type="submit">Filter</button>
+                <a href="{% url 'maintenance:asset_list' %}" class="link-button" style="margin-left: 0.5rem; padding: 0.5rem 1rem;">Clear</a>
+            </div>
+        </form>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Asset ID</th>
+                <th>Asset Name</th>
+                <th>Type</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Failure Probability</th>
+                <th>Risk Level</th>
+                <th>Total Cost</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for asset in assets %}
+            <tr>
+                <td>{{ asset.asset_id }}</td>
+                <td><strong>{{ asset.asset_name }}</strong></td>
+                <td>{{ asset.asset_type }}</td>
+                <td>{{ asset.location }}</td>
+                <td>
+                    <span class="badge badge-{{ asset.status }}">
+                        {{ asset.status|title }}
+                    </span>
+                </td>
+                <td>
+                    {% if asset.failure_probability %}
+                        {{ asset.failure_probability.probability_score|floatformat:2 }}%
+                    {% else %}
+                        <em>N/A</em>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if asset.failure_probability %}
+                        <span class="badge badge-{{ asset.failure_probability.risk_level }}">
+                            {{ asset.failure_probability.risk_level|title }}
+                        </span>
+                    {% else %}
+                        <em>N/A</em>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if asset.maintenance_cost %}
+                        ${{ asset.maintenance_cost.total_cost|floatformat:2 }}
+                    {% else %}
+                        <em>N/A</em>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'maintenance:asset_details' asset.asset_id %}" class="link-button" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">View Details</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" style="text-align: center; padding: 2rem;">
+                    <em>No assets found matching the filters.</em>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

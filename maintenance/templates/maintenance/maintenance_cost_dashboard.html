@@ -1,0 +1,189 @@
+{% extends 'maintenance/base.html' %}
+
+{% block title %}Maintenance Cost Dashboard{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Maintenance Cost Dashboard</h2>
+    
+    <div class="filters">
+        <form method="get">
+            <div>
+                <label for="cost_trend">Cost Trend:</label>
+                <select name="cost_trend" id="cost_trend">
+                    <option value="">All Trends</option>
+                    {% for trend in cost_trends %}
+                    <option value="{{ trend }}" {% if current_filter.cost_trend == trend %}selected{% endif %}>{{ trend|title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <button type="submit">Filter</button>
+                <a href="{% url 'maintenance:maintenance_cost_dashboard' %}" class="link-button" style="margin-left: 0.5rem; padding: 0.5rem 1rem;">Clear</a>
+            </div>
+        </form>
+    </div>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Maintenance Cost</h3>
+            <div class="value">${{ total_maintenance_cost.total|default:0|floatformat:2 }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Average Monthly Cost</h3>
+            <div class="value">${{ total_maintenance_cost.avg_monthly|default:0|floatformat:2 }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Average Yearly Cost</h3>
+            <div class="value">${{ total_maintenance_cost.avg_yearly|default:0|floatformat:2 }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Increasing Costs</h3>
+            <div class="value">{{ increasing_costs }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Decreasing Costs</h3>
+            <div class="value">{{ decreasing_costs }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Stable Costs</h3>
+            <div class="value">{{ stable_costs }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Cost Breakdown by Type</h2>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Maintenance</h3>
+            <div class="value">${{ cost_by_type.total_maintenance|default:0|floatformat:2 }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Repairs</h3>
+            <div class="value">${{ cost_by_type.total_repair|default:0|floatformat:2 }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Upgrades</h3>
+            <div class="value">${{ cost_by_type.total_upgrade|default:0|floatformat:2 }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Other</h3>
+            <div class="value">${{ cost_by_type.total_other|default:0|floatformat:2 }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Top 10 Most Expensive Assets (Total Cost)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Asset ID</th>
+                <th>Asset Name</th>
+                <th>Type</th>
+                <th>Total Cost</th>
+                <th>Cost Last 12M</th>
+                <th>Avg Monthly</th>
+                <th>Cost Trend</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for asset in top_expensive %}
+            <tr>
+                <td>{{ asset.asset_id }}</td>
+                <td><strong>{{ asset.asset_name }}</strong></td>
+                <td>{{ asset.asset_type }}</td>
+                <td>${{ asset.maintenance_cost.total_cost|floatformat:2 }}</td>
+                <td>${{ asset.maintenance_cost.cost_last_12m|floatformat:2 }}</td>
+                <td>${{ asset.maintenance_cost.avg_monthly_cost|floatformat:2 }}</td>
+                <td>{{ asset.maintenance_cost.cost_trend|title }}</td>
+                <td>
+                    <a href="{% url 'maintenance:asset_details' asset.asset_id %}" class="link-button" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">View</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align: center;">No assets found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Assets with Highest Monthly Costs</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Asset ID</th>
+                <th>Asset Name</th>
+                <th>Type</th>
+                <th>Avg Monthly Cost</th>
+                <th>Cost Last 12M</th>
+                <th>Total Cost</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for asset in high_monthly_costs %}
+            <tr>
+                <td>{{ asset.asset_id }}</td>
+                <td><strong>{{ asset.asset_name }}</strong></td>
+                <td>{{ asset.asset_type }}</td>
+                <td>${{ asset.maintenance_cost.avg_monthly_cost|floatformat:2 }}</td>
+                <td>${{ asset.maintenance_cost.cost_last_12m|floatformat:2 }}</td>
+                <td>${{ asset.maintenance_cost.total_cost|floatformat:2 }}</td>
+                <td>
+                    <a href="{% url 'maintenance:asset_details' asset.asset_id %}" class="link-button" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">View</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center;">No assets found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h2>All Assets - Cost Summary</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Asset ID</th>
+                <th>Asset Name</th>
+                <th>Type</th>
+                <th>Total Cost</th>
+                <th>Cost Last 12M</th>
+                <th>Avg Monthly</th>
+                <th>Cost Trend</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for asset in assets_with_costs %}
+            <tr>
+                <td>{{ asset.asset_id }}</td>
+                <td><strong>{{ asset.asset_name }}</strong></td>
+                <td>{{ asset.asset_type }}</td>
+                <td>${{ asset.maintenance_cost.total_cost|floatformat:2 }}</td>
+                <td>${{ asset.maintenance_cost.cost_last_12m|floatformat:2 }}</td>
+                <td>${{ asset.maintenance_cost.avg_monthly_cost|floatformat:2 }}</td>
+                <td>{{ asset.maintenance_cost.cost_trend|title }}</td>
+                <td>
+                    <a href="{% url 'maintenance:asset_details' asset.asset_id %}" class="link-button" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">View</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align: center;">No assets with cost data found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
