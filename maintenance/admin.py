@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     Asset, MaintenanceEmployee, MaintenanceEmployeeEducation,
     AssetValue, AssetCost, AssetFailure, PLCSensorReading,
-    MaintenanceOrder, MaintenanceTask, FailureProbability, MaintenanceCost
+    MaintenanceOrder, MaintenanceTask, FailureProbability, MaintenanceCost, FailurePrediction
 )
 
 
@@ -83,4 +83,13 @@ class MaintenanceCostAdmin(admin.ModelAdmin):
     list_filter = ['cost_trend', 'calculation_date']
     search_fields = ['asset__asset_name']
     readonly_fields = ['calculation_date', 'created_at', 'updated_at']
+
+
+@admin.register(FailurePrediction)
+class FailurePredictionAdmin(admin.ModelAdmin):
+    list_display = ['prediction_id', 'asset', 'probability_score', 'predicted_failure', 'risk_level', 'prediction_date', 'model_version']
+    list_filter = ['risk_level', 'predicted_failure', 'prediction_date', 'model_version']
+    search_fields = ['asset__asset_name']
+    readonly_fields = ['prediction_date', 'created_at', 'updated_at']
+    date_hierarchy = 'prediction_date'
 

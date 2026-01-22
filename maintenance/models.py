@@ -262,3 +262,30 @@ class MaintenanceCost(models.Model):
 
     def __str__(self):
         return f"{self.asset.asset_name} - Total: ${self.total_cost}"
+
+
+class FailurePrediction(models.Model):
+    """Stores LSTM-based failure predictions for each asset."""
+    prediction_id = models.AutoField(primary_key=True)
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='failure_predictions')
+    prediction_date = models.DateTimeField()
+    probability_score = models.DecimalField(max_digits=5, decimal_places=4, validators=[MinValueValidator(0)])
+    predicted_failure = models.BooleanField(default=False)
+    risk_level = models.CharField(max_length=50)  # low, medium, high, critical
+    model_version = models.CharField(max_length=50, default='LSTM_v1.0')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'faliure_prediction'
+        ordering = ['-prediction_date', '-probability_score']
+        indexes = [
+            models.Index(fields=['asset', 'prediction_date']),
+            models.Index(fields=['risk_level']),
+            models.Index(fields=['probability_score']),
+            models.Index(fields=['predicted_failure']),
+        ]
+        unique_together = [['asset', 'prediction_date']]
+
+    def __str__(self):
+        return f"{self.asset.asset_name} - {self.probability_score:.2%} ({self.risk_level})"

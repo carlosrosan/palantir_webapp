@@ -2,9 +2,74 @@
 
 {% block title %}Failure Probability Dashboard{% endblock %}
 
+{% block extra_css %}
+<style>
+    .probability-display {
+        font-size: 4rem;
+        font-weight: bold;
+        text-align: center;
+        padding: 2rem;
+        border-radius: 12px;
+        margin: 1rem 0;
+        transition: all 0.3s ease;
+    }
+    
+    .probability-red {
+        background-color: #fee;
+        color: #c0392b;
+        border: 3px solid #e74c3c;
+    }
+    
+    .probability-yellow {
+        background-color: #fff9e6;
+        color: #d68910;
+        border: 3px solid #f39c12;
+    }
+    
+    .probability-green {
+        background-color: #eafaf1;
+        color: #27ae60;
+        border: 3px solid #2ecc71;
+    }
+    
+    .probability-label {
+        font-size: 1rem;
+        font-weight: normal;
+        margin-top: 0.5rem;
+        opacity: 0.8;
+    }
+    
+    .asset-probability-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .asset-probability-card:last-child {
+        border-bottom: none;
+    }
+    
+    .asset-info {
+        flex: 1;
+    }
+    
+    .probability-mini {
+        font-size: 2.5rem;
+        font-weight: bold;
+        min-width: 120px;
+        text-align: center;
+        padding: 1rem;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="card">
     <h2>Failure Probability Dashboard</h2>
+    <p style="margin-bottom: 1rem; color: #7f8c8d;">Predictions for next 7 days using LSTM Neural Network</p>
     
     <div class="filters">
         <form method="get">
@@ -82,132 +147,121 @@
 
 <div class="card">
     <h2>Top 10 Highest Risk Assets</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Asset ID</th>
-                <th>Asset Name</th>
-                <th>Type</th>
-                <th>Probability Score</th>
-                <th>Risk Level</th>
-                <th>Failures</th>
-                <th>Warnings</th>
-                <th>Unresolved</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for asset in top_risk_assets %}
-            <tr>
-                <td>{{ asset.asset_id }}</td>
-                <td><strong>{{ asset.asset_name }}</strong></td>
-                <td>{{ asset.asset_type }}</td>
-                <td>{{ asset.failure_probability.probability_score|floatformat:2 }}%</td>
-                <td>
-                    <span class="badge badge-{{ asset.failure_probability.risk_level }}">
-                        {{ asset.failure_probability.risk_level|title }}
+    <div style="display: flex; flex-direction: column; gap: 0;">
+        {% for item in top_risk_assets %}
+        <div class="asset-probability-card">
+            <div class="asset-info">
+                <h3 style="margin: 0 0 0.5rem 0;">{{ item.asset.asset_name }}</h3>
+                <p style="margin: 0; color: #7f8c8d; font-size: 0.875rem;">
+                    ID: {{ item.asset.asset_id }} | Type: {{ item.asset.asset_type }} | 
+                    <span class="badge badge-{{ item.prediction.risk_level }}">
+                        {{ item.prediction.risk_level|title }}
                     </span>
-                </td>
-                <td>{{ asset.failure_probability.failure_count }}</td>
-                <td>{{ asset.failure_probability.warning_count }}</td>
-                <td>{{ asset.failure_probability.unresolved_failures }}</td>
-                <td>
-                    <a href="{% url 'maintenance:asset_details' asset.asset_id %}" class="link-button" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">View</a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="9" style="text-align: center;">No assets found.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    {% if item.prediction.predicted_failure %}
+                    <span style="color: #e74c3c; font-weight: bold;">⚠️ Failure Predicted</span>
+                    {% endif %}
+                </p>
+            </div>
+            {% with prob=item.prediction.probability_score prob_percent=item.prediction.probability_score|floatformat:0 %}
+            {% if prob > 0.80 %}
+            <div class="probability-mini probability-red">{{ prob_percent }}%</div>
+            {% elif prob >= 0.55 %}
+            <div class="probability-mini probability-yellow">{{ prob_percent }}%</div>
+            {% else %}
+            <div class="probability-mini probability-green">{{ prob_percent }}%</div>
+            {% endif %}
+            {% endwith %}
+            <div>
+                <a href="{% url 'maintenance:asset_details' item.asset.asset_id %}" class="link-button" style="padding: 0.5rem 1rem; font-size: 0.875rem;">View Details</a>
+            </div>
+        </div>
+        {% empty %}
+        <p style="text-align: center; padding: 2rem;">No assets found.</p>
+        {% endfor %}
+    </div>
 </div>
 
 <div class="card">
     <h2>Critical Risk Assets (High/Critical)</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Asset ID</th>
-                <th>Asset Name</th>
-                <th>Type</th>
-                <th>Probability Score</th>
-                <th>Risk Level</th>
-                <th>Days Since Maintenance</th>
-                <th>Unresolved Failures</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for asset in critical_assets %}
-            <tr>
-                <td>{{ asset.asset_id }}</td>
-                <td><strong>{{ asset.asset_name }}</strong></td>
-                <td>{{ asset.asset_type }}</td>
-                <td>{{ asset.failure_probability.probability_score|floatformat:2 }}%</td>
-                <td>
-                    <span class="badge badge-{{ asset.failure_probability.risk_level }}">
-                        {{ asset.failure_probability.risk_level|title }}
+    <div style="display: flex; flex-direction: column; gap: 0;">
+        {% for item in critical_assets %}
+        <div class="asset-probability-card">
+            <div class="asset-info">
+                <h3 style="margin: 0 0 0.5rem 0;">{{ item.asset.asset_name }}</h3>
+                <p style="margin: 0; color: #7f8c8d; font-size: 0.875rem;">
+                    ID: {{ item.asset.asset_id }} | Type: {{ item.asset.asset_type }} | 
+                    <span class="badge badge-{{ item.prediction.risk_level }}">
+                        {{ item.prediction.risk_level|title }}
                     </span>
-                </td>
-                <td>{{ asset.failure_probability.days_since_maintenance|default:"N/A" }}</td>
-                <td>{{ asset.failure_probability.unresolved_failures }}</td>
-                <td>
-                    <a href="{% url 'maintenance:asset_details' asset.asset_id %}" class="link-button" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">View</a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="8" style="text-align: center;">No critical risk assets found.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    {% if item.prediction.predicted_failure %}
+                    <span style="color: #e74c3c; font-weight: bold;">⚠️ Failure Predicted</span>
+                    {% endif %}
+                </p>
+            </div>
+            {% with prob=item.prediction.probability_score prob_percent=item.prediction.probability_score|floatformat:0 %}
+            {% if prob > 0.80 %}
+            <div class="probability-mini probability-red">{{ prob_percent }}%</div>
+            {% elif prob >= 0.55 %}
+            <div class="probability-mini probability-yellow">{{ prob_percent }}%</div>
+            {% else %}
+            <div class="probability-mini probability-green">{{ prob_percent }}%</div>
+            {% endif %}
+            {% endwith %}
+            <div>
+                <a href="{% url 'maintenance:asset_details' item.asset.asset_id %}" class="link-button" style="padding: 0.5rem 1rem; font-size: 0.875rem;">View Details</a>
+            </div>
+        </div>
+        {% empty %}
+        <p style="text-align: center; padding: 2rem;">No critical risk assets found.</p>
+        {% endfor %}
+    </div>
 </div>
 
 <div class="card">
     <h2>All Assets - Failure Probability Summary</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Asset ID</th>
-                <th>Asset Name</th>
-                <th>Type</th>
-                <th>Probability Score</th>
-                <th>Risk Level</th>
-                <th>Failure Count</th>
-                <th>Warnings</th>
-                <th>Unresolved</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for asset in assets_with_probability %}
-            <tr>
-                <td>{{ asset.asset_id }}</td>
-                <td><strong>{{ asset.asset_name }}</strong></td>
-                <td>{{ asset.asset_type }}</td>
-                <td>{{ asset.failure_probability.probability_score|floatformat:2 }}%</td>
-                <td>
-                    <span class="badge badge-{{ asset.failure_probability.risk_level }}">
-                        {{ asset.failure_probability.risk_level|title }}
-                    </span>
-                </td>
-                <td>{{ asset.failure_probability.failure_count }}</td>
-                <td>{{ asset.failure_probability.warning_count }}</td>
-                <td>{{ asset.failure_probability.unresolved_failures }}</td>
-                <td>
-                    <a href="{% url 'maintenance:asset_details' asset.asset_id %}" class="link-button" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">View</a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="9" style="text-align: center;">No assets with probability data found.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+        {% for item in assets_with_predictions %}
+        <div style="background: #f8f9fa; border-radius: 8px; padding: 1.5rem; border: 1px solid #ddd;">
+            <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem;">{{ item.asset.asset_name }}</h3>
+            <p style="margin: 0 0 1rem 0; color: #7f8c8d; font-size: 0.875rem;">
+                ID: {{ item.asset.asset_id }} | {{ item.asset.asset_type }}
+            </p>
+            {% with prob=item.prediction.probability_score prob_percent=item.prediction.probability_score|floatformat:0 %}
+            {% if prob > 0.80 %}
+            <div class="probability-display probability-red">
+                {{ prob_percent }}%
+                <div class="probability-label">Failure Probability (Next 7 Days)</div>
+            </div>
+            {% elif prob >= 0.55 %}
+            <div class="probability-display probability-yellow">
+                {{ prob_percent }}%
+                <div class="probability-label">Failure Probability (Next 7 Days)</div>
+            </div>
+            {% else %}
+            <div class="probability-display probability-green">
+                {{ prob_percent }}%
+                <div class="probability-label">Failure Probability (Next 7 Days)</div>
+            </div>
+            {% endif %}
+            {% endwith %}
+            <div style="margin-top: 1rem; text-align: center;">
+                <span class="badge badge-{{ item.prediction.risk_level }}" style="margin-right: 0.5rem;">
+                    {{ item.prediction.risk_level|title }}
+                </span>
+                {% if item.prediction.predicted_failure %}
+                <span style="color: #e74c3c; font-weight: bold;">⚠️ Failure Predicted</span>
+                {% endif %}
+            </div>
+            <div style="margin-top: 1rem; text-align: center;">
+                <a href="{% url 'maintenance:asset_details' item.asset.asset_id %}" class="link-button" style="padding: 0.5rem 1rem; font-size: 0.875rem;">View Details</a>
+            </div>
+        </div>
+        {% empty %}
+        <div style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+            <p>No assets with prediction data found.</p>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}
 

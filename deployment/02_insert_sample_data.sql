@@ -169,3 +169,24 @@ INSERT INTO mantainace_cost (asset_id, calculation_date, total_cost, total_trans
 (7, '2022-11-20 10:00:00', 2800.00, 1, 2800.00, 2800.00, 0.00, 0.00, 0.00, 2800.00, 2800.00, 0.00, 1, 1, 0, 233.33, 2800.00, 2.06, 'stable', '2022-07-15', 128, 1361),
 (8, '2022-11-20 10:00:00', 15000.00, 1, 15000.00, 15000.00, 0.00, 0.00, 0.00, 15000.00, 15000.00, 15000.00, 1, 1, 1, 1250.00, 15000.00, 7.57, 'increasing', '2022-10-20', 31, 1982);
 
+-- Insert sample failure probability base data (feature vectors)
+INSERT INTO faliure_probability_base (asset_id, extraction_date, asset_age_days, asset_status, sensor_total_readings_30d, sensor_warning_count_30d, sensor_critical_count_30d, sensor_avg_normal_value, sensor_avg_warning_value, sensor_avg_critical_value, sensor_max_value, sensor_min_value, sensor_std_value, failure_count_365d, failure_critical_count, failure_high_count, failure_medium_count, failure_low_count, failure_avg_downtime, failure_total_downtime, failure_unresolved_count, days_since_last_failure, task_total_365d, task_completed_count, task_in_progress_count, task_pending_count, task_avg_estimated_hours, task_avg_actual_hours, task_total_hours, days_since_last_task, order_total_365d, order_preventive_count, order_corrective_count, order_emergency_count, order_completed_count, order_avg_estimated_cost, order_avg_actual_cost, order_total_actual_cost, days_since_last_order) VALUES
+(1, '2022-11-20 10:00:00', 1040, 'operational', 4, 1, 0, 75.5, 82.0, NULL, 82.0, 75.5, 2.8, 1, 0, 1, 0, 0, 8.5, 8.5, 0, 163, 2, 0, 0, 2, 2.5, NULL, 0.0, NULL, 2, 1, 0, 1, 1, 3750.00, 5200.00, 11000.00, 0),
+(2, '2022-11-20 10:00:00', 1219, 'operational', 3, 0, 0, 125.5, NULL, NULL, 125.5, 45.0, 40.2, 1, 0, 0, 1, 0, 4.0, 4.0, 0, 260, 2, 2, 0, 0, 1.25, 1.125, 2.25, 5, 2, 2, 0, 0, 2, 2350.00, 2300.00, 4700.00, 5),
+(3, '2022-11-20 10:00:00', 620, 'operational', 2, 0, 0, 1.5, NULL, NULL, 1.5, 850.0, 600.0, 1, 0, 0, 0, 1, 2.5, 2.5, 0, 296, 2, 2, 0, 0, 2.0, 2.25, 4.5, 15, 1, 0, 1, 0, 1, 1800.00, 1750.00, 1800.00, 15),
+(4, '2022-11-20 10:00:00', 1476, 'maintenance', 3, 0, 0, 22.5, NULL, NULL, 22.5, 1.0, 20.8, 1, 1, 0, 0, 0, 24.0, 24.0, 0, 189, 3, 1, 1, 1, 2.0, 1.0, 2.0, 10, 2, 1, 0, 0, 0, 2200.00, NULL, 14200.00, 10),
+(5, '2022-11-20 10:00:00', 800, 'operational', 3, 0, 0, 480.0, NULL, NULL, 480.0, 60.0, 210.0, 1, 0, 0, 1, 0, 6.0, 6.0, 0, 102, 2, 0, 0, 2, 2.5, NULL, 0.0, NULL, 1, 1, 0, 0, 0, 4500.00, NULL, 4500.00, 60),
+(6, '2022-11-20 10:00:00', 486, 'operational', 2, 0, 0, 65.0, NULL, NULL, 65.0, 1.8, 44.7, 1, 0, 0, 1, 0, 5.5, 5.5, 0, 56, 1, 1, 0, 0, 1.5, 2.0, 2.0, 45, 1, 0, 0, 0, 1, 500.00, 500.00, 1500.00, 45),
+(7, '2022-11-20 10:00:00', 1361, 'operational', 2, 0, 0, 95.0, NULL, NULL, 95.0, 12.5, 58.4, 1, 0, 1, 0, 0, 12.0, 12.0, 0, 335, 2, 0, 0, 2, 3.0, NULL, 0.0, NULL, 1, 1, 0, 0, 0, 2800.00, NULL, 2800.00, 128),
+(8, '2022-11-20 10:00:00', 1982, 'operational', 3, 1, 0, 550.0, 4.2, NULL, 550.0, 4.2, 315.0, 1, 0, 0, 1, 0, 0.0, 0.0, 1, 36, 2, 1, 1, 0, 7.5, 3.5, 3.5, 18, 1, 0, 1, 0, 0, 15000.00, NULL, 15000.00, 18);
+
+-- Insert sample failure prediction data (LSTM predictions)
+INSERT INTO faliure_prediction (asset_id, prediction_date, probability_score, predicted_failure, risk_level, model_version) VALUES
+(1, '2022-11-20 10:00:00', 0.4523, FALSE, 'medium', 'LSTM_v1.0'),
+(2, '2022-11-20 10:00:00', 0.2134, FALSE, 'low', 'LSTM_v1.0'),
+(3, '2022-11-20 10:00:00', 0.1876, FALSE, 'low', 'LSTM_v1.0'),
+(4, '2022-11-20 10:00:00', 0.7234, TRUE, 'critical', 'LSTM_v1.0'),
+(5, '2022-11-20 10:00:00', 0.3456, FALSE, 'medium', 'LSTM_v1.0'),
+(6, '2022-11-20 10:00:00', 0.2567, FALSE, 'low', 'LSTM_v1.0'),
+(7, '2022-11-20 10:00:00', 0.3891, FALSE, 'medium', 'LSTM_v1.0'),
+(8, '2022-11-20 10:00:00', 0.6123, TRUE, 'high', 'LSTM_v1.0');

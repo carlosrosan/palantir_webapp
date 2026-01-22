@@ -6,7 +6,7 @@ CREATE DATABASE IF NOT EXISTS palantir_maintenance;
 USE palantir_maintenance;
 
 -- Table: assets
-CREATE TABLE IF NOT EXISTS assets (
+CREATE TABLE IF NOT EXISTS palantir_maintenance.assets (
     asset_id INT AUTO_INCREMENT PRIMARY KEY,
     asset_name VARCHAR(255) NOT NULL,
     asset_type VARCHAR(100) NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS assets (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Table: mantainance_employees
-CREATE TABLE IF NOT EXISTS mantainance_employees (
+CREATE TABLE IF NOT EXISTS palantir_maintenance.mantainance_employees (
     employee_id INT AUTO_INCREMENT PRIMARY KEY,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS mantainance_employees (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Table: mantainance_employees_education
-CREATE TABLE IF NOT EXISTS mantainance_employees_education (
+CREATE TABLE IF NOT EXISTS palantir_maintenance.mantainance_employees_education (
     education_id INT AUTO_INCREMENT PRIMARY KEY,
     employee_id INT NOT NULL,
     degree VARCHAR(255) NOT NULL,
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS mantainance_employees_education (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Table: asset_value
-CREATE TABLE IF NOT EXISTS asset_value (
+CREATE TABLE IF NOT EXISTS palantir_maintenance.asset_value (
     value_id INT AUTO_INCREMENT PRIMARY KEY,
     asset_id INT NOT NULL,
     value_date DATE NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS asset_value (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Table: asset_costs
-CREATE TABLE IF NOT EXISTS asset_costs (
+CREATE TABLE IF NOT EXISTS palantir_maintenance.asset_costs (
     cost_id INT AUTO_INCREMENT PRIMARY KEY,
     asset_id INT NOT NULL,
     cost_type VARCHAR(100) NOT NULL,
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS asset_costs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Table: assets_faliures
-CREATE TABLE IF NOT EXISTS assets_faliures (
+CREATE TABLE IF NOT EXISTS palantir_maintenance.assets_faliures (
     failure_id INT AUTO_INCREMENT PRIMARY KEY,
     asset_id INT NOT NULL,
     failure_date DATETIME NOT NULL,
@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS assets_faliures (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Table: plc_sensor_readings
-CREATE TABLE IF NOT EXISTS plc_sensor_readings (
+CREATE TABLE IF NOT EXISTS palantir_maintenance.plc_sensor_readings (
     reading_id INT AUTO_INCREMENT PRIMARY KEY,
     asset_id INT NOT NULL,
     sensor_name VARCHAR(255) NOT NULL,
@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS plc_sensor_readings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Table: mantainance_orders
-CREATE TABLE IF NOT EXISTS mantainance_orders (
+CREATE TABLE IF NOT EXISTS palantir_maintenance.mantainance_orders (
     order_id INT AUTO_INCREMENT PRIMARY KEY,
     asset_id INT NOT NULL,
     assigned_employee_id INT,
@@ -151,7 +151,7 @@ CREATE TABLE IF NOT EXISTS mantainance_orders (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Table: mantainance_tasks
-CREATE TABLE IF NOT EXISTS mantainance_tasks (
+CREATE TABLE IF NOT EXISTS palantir_maintenance.mantainance_tasks (
     task_id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
     task_name VARCHAR(255) NOT NULL,
@@ -173,7 +173,7 @@ CREATE TABLE IF NOT EXISTS mantainance_tasks (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Table: faliure_probability
-CREATE TABLE IF NOT EXISTS faliure_probability (
+CREATE TABLE IF NOT EXISTS palantir_maintenance.faliure_probability (
     probability_id INT AUTO_INCREMENT PRIMARY KEY,
     asset_id INT NOT NULL,
     probability_score DECIMAL(5, 4) NOT NULL CHECK (probability_score >= 0 AND probability_score <= 1),
@@ -196,7 +196,7 @@ CREATE TABLE IF NOT EXISTS faliure_probability (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Table: mantainace_cost
-CREATE TABLE IF NOT EXISTS mantainace_cost (
+CREATE TABLE IF NOT EXISTS palantir_maintenance.mantainace_cost (
     cost_calculation_id INT AUTO_INCREMENT PRIMARY KEY,
     asset_id INT NOT NULL,
     calculation_date DATETIME NOT NULL,
@@ -230,3 +230,79 @@ CREATE TABLE IF NOT EXISTS mantainace_cost (
     INDEX idx_total_cost (total_cost)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Table: faliure_probability_base
+CREATE TABLE IF NOT EXISTS palantir_maintenance.faliure_probability_base (
+    base_id INT AUTO_INCREMENT PRIMARY KEY,
+    asset_id INT NOT NULL,
+    extraction_date DATETIME NOT NULL,
+    -- Asset basic info
+    asset_age_days INT,
+    asset_status VARCHAR(50),
+    -- Sensor features (last 30 days)
+    sensor_total_readings_30d INT DEFAULT 0,
+    sensor_warning_count_30d INT DEFAULT 0,
+    sensor_critical_count_30d INT DEFAULT 0,
+    sensor_avg_normal_value DECIMAL(12, 4),
+    sensor_avg_warning_value DECIMAL(12, 4),
+    sensor_avg_critical_value DECIMAL(12, 4),
+    sensor_max_value DECIMAL(12, 4),
+    sensor_min_value DECIMAL(12, 4),
+    sensor_std_value DECIMAL(12, 4),
+    -- Failure features (last 365 days)
+    failure_count_365d INT DEFAULT 0,
+    failure_critical_count INT DEFAULT 0,
+    failure_high_count INT DEFAULT 0,
+    failure_medium_count INT DEFAULT 0,
+    failure_low_count INT DEFAULT 0,
+    failure_avg_downtime DECIMAL(10, 2),
+    failure_total_downtime DECIMAL(10, 2),
+    failure_unresolved_count INT DEFAULT 0,
+    days_since_last_failure INT,
+    -- Maintenance task features (last 365 days)
+    task_total_365d INT DEFAULT 0,
+    task_completed_count INT DEFAULT 0,
+    task_in_progress_count INT DEFAULT 0,
+    task_pending_count INT DEFAULT 0,
+    task_avg_estimated_hours DECIMAL(8, 2),
+    task_avg_actual_hours DECIMAL(8, 2),
+    task_total_hours DECIMAL(10, 2),
+    days_since_last_task INT,
+    -- Maintenance order features (last 365 days)
+    order_total_365d INT DEFAULT 0,
+    order_preventive_count INT DEFAULT 0,
+    order_corrective_count INT DEFAULT 0,
+    order_emergency_count INT DEFAULT 0,
+    order_completed_count INT DEFAULT 0,
+    order_avg_estimated_cost DECIMAL(12, 2),
+    order_avg_actual_cost DECIMAL(12, 2),
+    order_total_actual_cost DECIMAL(12, 2),
+    days_since_last_order INT,
+    -- Dynamic sensor type features (stored as JSON or additional columns)
+    -- These will be added dynamically based on sensor types in the data
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (asset_id) REFERENCES assets(asset_id) ON DELETE CASCADE,
+    UNIQUE KEY unique_asset_extraction (asset_id, extraction_date),
+    INDEX idx_asset_id (asset_id),
+    INDEX idx_extraction_date (extraction_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Table: faliure_prediction
+CREATE TABLE IF NOT EXISTS palantir_maintenance.faliure_prediction (
+    prediction_id INT AUTO_INCREMENT PRIMARY KEY,
+    asset_id INT NOT NULL,
+    prediction_date DATETIME NOT NULL,
+    probability_score DECIMAL(5, 4) NOT NULL CHECK (probability_score >= 0 AND probability_score <= 1),
+    predicted_failure BOOLEAN DEFAULT FALSE,
+    risk_level VARCHAR(50) NOT NULL,
+    model_version VARCHAR(50) DEFAULT 'LSTM_v1.0',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (asset_id) REFERENCES assets(asset_id) ON DELETE CASCADE,
+    UNIQUE KEY unique_asset_prediction (asset_id, prediction_date),
+    INDEX idx_asset_id (asset_id),
+    INDEX idx_prediction_date (prediction_date),
+    INDEX idx_risk_level (risk_level),
+    INDEX idx_probability_score (probability_score),
+    INDEX idx_predicted_failure (predicted_failure)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

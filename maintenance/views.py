@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.db.models import Q, Count, Sum, Avg
 from .models import (
     Asset, AssetCost, AssetFailure, PLCSensorReading,
-    MaintenanceOrder, FailureProbability, MaintenanceCost
+    MaintenanceOrder, FailureProbability, MaintenanceCost, FailurePrediction
 )
 
 
@@ -141,57 +141,84 @@ def maintenance_cost_dashboard(request):
 
 
 def failure_probability_dashboard(request):
-    """Display failure probability dashboard with risk analysis."""
-    # Get all assets with their probability data
-    assets_with_probability = Asset.objects.filter(
-        failure_probability__isnull=False
-    ).select_related('failure_probability').order_by('-failure_probability__probability_score')
+    """Display failure probability dashboard with risk analysis using LSTM predictions."""
+    from django.db.models import Max
+    
+    # Get the latest prediction for each asset
+    latest_predictions = FailurePrediction.objects.filter(
+        asset_id__in=Asset.objects.values_list('asset_id', flat=True)
+    ).values('asset_id').annotate(
+        latest_date=Max('prediction_date')
+    )
+    
+    # Get assets with their latest predictions
+    assets_with_predictions = []
+    for pred in latest_predictions:
+        try:
+            asset = Asset.objects.get(asset_id=pred['asset_id'])
+            latest_pred = FailurePrediction.objects.filter(
+                asset=asset,
+                prediction_date=pred['latest_date']
+            ).first()
+            if latest_pred:
+                assets_with_predictions.append({
+                    'asset': asset,
+                    'prediction': latest_pred
+                })
+        except Asset.DoesNotExist:
+            continue
+    
+    # Sort by probability score descending
+    assets_with_predictions.sort(key=lambda x: x['prediction'].probability_score, reverse=True)
     
     # Filter options
     risk_level_filter = request.GET.get('risk_level', '')
     if risk_level_filter:
-        assets_with_probability = assets_with_probability.filter(
-            failure_probability__risk_level=risk_level_filter
-        )
+        assets_with_predictions = [
+            item for item in assets_with_predictions 
+            if item['prediction'].risk_level == risk_level_filter
+        ]
     
     # Aggregate statistics
-    total_assets = assets_with_probability.count()
+    total_assets = len(assets_with_predictions)
     
-    # Risk level distribution
-    risk_distribution = FailureProbability.objects.values('risk_level').annotate(
-        count=Count('probability_id')
+    # Risk level distribution from predictions
+    risk_distribution = FailurePrediction.objects.values('risk_level').annotate(
+        count=Count('prediction_id')
     ).order_by('risk_level')
     
     # Average probability by risk level
-    avg_probability_by_risk = FailureProbability.objects.values('risk_level').annotate(
+    avg_probability_by_risk = FailurePrediction.objects.values('risk_level').annotate(
         avg_probability=Avg('probability_score')
     ).order_by('risk_level')
     
     # Critical assets (high or critical risk)
-    critical_assets = assets_with_probability.filter(
-        Q(failure_probability__risk_level='high') | Q(failure_probability__risk_level='critical')
-    )
+    critical_assets = [
+        item for item in assets_with_predictions
+        if item['prediction'].risk_level in ['high', 'critical']
+    ]
     
-    # Assets with unresolved failures
-    assets_with_unresolved = assets_with_probability.filter(
-        failure_probability__unresolved_failures__gt=0
-    )
+    # Assets with predicted failures
+    assets_with_predicted_failures = [
+        item for item in assets_with_predictions
+        if item['prediction'].predicted_failure
+    ]
     
-    # Assets with recent warnings
-    assets_with_warnings = assets_with_probability.filter(
+    # Assets with warnings (using old failure_probability for now, or can be removed)
+    assets_with_warnings = Asset.objects.filter(
         failure_probability__warning_count__gt=0
     )
     
     # Top 10 highest risk assets
-    top_risk_assets = assets_with_probability[:10]
+    top_risk_assets = assets_with_predictions[:10]
     
     context = {
-        'assets_with_probability': assets_with_probability,
+        'assets_with_predictions': assets_with_predictions,
         'total_assets': total_assets,
         'risk_distribution': risk_distribution,
         'avg_probability_by_risk': avg_probability_by_risk,
         'critical_assets': critical_assets,
-        'assets_with_unresolved': assets_with_unresolved,
+        'assets_with_unresolved': assets_with_predicted_failures,
         'assets_with_warnings': assets_with_warnings,
         'top_risk_assets': top_risk_assets,
         'risk_levels': ['low', 'medium', 'high', 'critical'],
