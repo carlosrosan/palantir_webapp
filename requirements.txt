@@ -5,3 +5,17 @@ cryptography>=41.0.0
 python-dotenv>=1.0.0
 mysql-connector-python>=8.0.0
 
+# Libraries for data science and machine learning notebooks
+# Note: Use 'python -m pip install -r requirements.txt' if pip launcher fails
+pandas>=1.5.0
+numpy>=1.21.0
+matplotlib>=3.5.0
+seaborn>=0.12.0
+scikit-learn>=1.0.0
+lightgbm>=3.3.0
+joblib>=1.1.0
+sqlalchemy>=1.4.0
+ipython>=8.0.0
+jupyter>=1.0.0
+notebook>=7.0.0
+

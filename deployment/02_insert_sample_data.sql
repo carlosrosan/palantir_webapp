@@ -82,70 +82,571 @@ INSERT INTO assets_faliures (asset_id, failure_date, failure_type, severity, des
 (7, '2021-12-20 10:00:00', 'Pressure Failure', 'high', 'Boiler pressure relief valve failure', 'Valve stuck due to scale buildup', 12.0, TRUE, '2021-12-22 16:00:00'),
 (8, '2022-10-15 08:30:00', 'Vibration Issue', 'medium', 'Excessive turbine vibration detected', 'Bearing wear requiring replacement', 0.0, FALSE, NULL);
 
--- Insert sample PLC sensor readings
-INSERT INTO plc_sensor_readings (asset_id, sensor_name, sensor_type, reading_value, unit, reading_timestamp, status) VALUES
-(1, 'Temperature Sensor 1', 'temperature', 75.5, 'Celsius', '2022-11-01 08:00:00', 'normal'),
-(1, 'Pressure Sensor 1', 'pressure', 8.5, 'bar', '2022-11-01 08:00:00', 'normal'),
-(1, 'Vibration Sensor 1', 'vibration', 2.3, 'mm/s', '2022-11-01 08:00:00', 'normal'),
-(1, 'Temperature Sensor 1', 'temperature', 82.0, 'Celsius', '2022-11-01 14:00:00', 'warning'),
-(1, 'Pressure Sensor 1', 'pressure', 8.2, 'bar', '2022-11-01 14:00:00', 'normal'),
-(2, 'Flow Sensor 1', 'flow', 125.5, 'L/min', '2022-11-01 09:00:00', 'normal'),
-(2, 'Pressure Sensor 1', 'pressure', 3.2, 'bar', '2022-11-01 09:00:00', 'normal'),
-(2, 'Temperature Sensor 1', 'temperature', 45.0, 'Celsius', '2022-11-01 09:00:00', 'normal'),
-(3, 'Speed Sensor 1', 'speed', 1.5, 'm/s', '2022-11-01 10:00:00', 'normal'),
-(3, 'Load Sensor 1', 'load', 850.0, 'kg', '2022-11-01 10:00:00', 'normal'),
-(4, 'Temperature Sensor 1', 'temperature', 22.5, 'Celsius', '2022-11-01 11:00:00', 'normal'),
-(4, 'Humidity Sensor 1', 'humidity', 45.0, '%', '2022-11-01 11:00:00', 'normal'),
-(4, 'Pressure Sensor 1', 'pressure', 1.0, 'bar', '2022-11-01 11:00:00', 'normal'),
-(5, 'Voltage Sensor 1', 'voltage', 480.0, 'V', '2022-11-01 12:00:00', 'normal'),
-(5, 'Current Sensor 1', 'current', 125.5, 'A', '2022-11-01 12:00:00', 'normal'),
-(5, 'Frequency Sensor 1', 'frequency', 60.0, 'Hz', '2022-11-01 12:00:00', 'normal'),
-(6, 'Temperature Sensor 1', 'temperature', 65.0, 'Celsius', '2022-11-01 13:00:00', 'normal'),
-(6, 'Vibration Sensor 1', 'vibration', 1.8, 'mm/s', '2022-11-01 13:00:00', 'normal'),
-(7, 'Temperature Sensor 1', 'temperature', 95.0, 'Celsius', '2022-11-01 14:00:00', 'normal'),
-(7, 'Pressure Sensor 1', 'pressure', 12.5, 'bar', '2022-11-01 14:00:00', 'normal'),
-(8, 'Vibration Sensor 1', 'vibration', 4.2, 'mm/s', '2022-11-01 15:00:00', 'warning'),
-(8, 'Temperature Sensor 1', 'temperature', 550.0, 'Celsius', '2022-11-01 15:00:00', 'normal'),
-(8, 'Pressure Sensor 1', 'pressure', 45.0, 'bar', '2022-11-01 15:00:00', 'normal');
+-- Insert sample PLC sensor readings (200x more data per asset)
+-- Using stored procedure to generate 200x more readings per asset
+DELIMITER $$
 
--- Insert sample maintenance orders
-INSERT INTO mantainance_orders (asset_id, assigned_employee_id, order_type, priority, description, scheduled_date, start_date, completion_date, status, estimated_cost, actual_cost) VALUES
-(1, 1, 'preventive', 'medium', 'Quarterly compressor maintenance and inspection', '2022-12-01 08:00:00', NULL, NULL, 'pending', 2500.00, NULL),
-(2, 2, 'preventive', 'low', 'Monthly pump system check', '2022-11-15 09:00:00', '2022-11-15 09:00:00', '2022-11-15 12:00:00', 'completed', 1200.00, 1150.00),
-(3, 3, 'corrective', 'medium', 'Fix conveyor belt alignment issue', '2022-11-05 10:00:00', '2022-11-05 10:00:00', '2022-11-05 14:30:00', 'completed', 1800.00, 1750.00),
-(4, 4, 'preventive', 'high', 'Annual HVAC system service', '2022-11-10 08:00:00', '2022-11-10 08:00:00', NULL, 'in_progress', 2200.00, NULL),
-(5, 7, 'preventive', 'high', 'Generator quarterly service', '2022-12-05 07:00:00', NULL, NULL, 'pending', 4500.00, NULL),
-(6, 1, 'corrective', 'medium', 'Motor bearing replacement follow-up inspection', '2022-10-05 11:00:00', '2022-10-05 11:00:00', '2022-10-05 13:00:00', 'completed', 500.00, 500.00),
-(7, 4, 'preventive', 'medium', 'Boiler annual inspection', '2022-12-10 09:00:00', NULL, NULL, 'pending', 2800.00, NULL),
-(8, 7, 'corrective', 'urgent', 'Address excessive turbine vibration', '2022-11-02 06:00:00', '2022-11-02 06:00:00', NULL, 'in_progress', 15000.00, NULL),
-(1, 6, 'emergency', 'urgent', 'Emergency compressor shutdown and inspection', '2022-11-20 16:00:00', '2022-11-20 16:00:00', '2022-11-20 20:00:00', 'completed', 5000.00, 5200.00),
-(2, 2, 'preventive', 'low', 'Pump system upgrade installation', '2022-08-20 08:00:00', '2022-08-20 08:00:00', '2022-08-22 17:00:00', 'completed', 3500.00, 3450.00);
+CREATE PROCEDURE IF NOT EXISTS generate_sensor_readings()
+BEGIN
+    DECLARE asset_id_var INT;
+    DECLARE sensor_idx INT;
+    DECLARE day_offset INT;
+    DECLARE hour_offset INT;
+    DECLARE minute_offset INT;
+    DECLARE reading_val DECIMAL(10,2);
+    DECLARE status_val VARCHAR(20);
+    DECLARE sensor_config VARCHAR(255);
+    DECLARE sensor_name_var VARCHAR(100);
+    DECLARE sensor_type_var VARCHAR(50);
+    DECLARE unit_var VARCHAR(20);
+    DECLARE base_value DECIMAL(10,2);
+    DECLARE timestamp_val DATETIME;
+    
+    -- Asset 1: Compressor (Temperature, Pressure, Vibration)
+    SET asset_id_var = 1;
+    SET sensor_idx = 0;
+    WHILE sensor_idx < 600 DO  -- 200 readings per sensor type * 3 sensors
+        SET day_offset = FLOOR(sensor_idx / 24);
+        SET hour_offset = sensor_idx % 24;
+        SET minute_offset = (sensor_idx * 15) % 60;
+        SET timestamp_val = DATE_ADD('2022-10-01 00:00:00', INTERVAL day_offset DAY);
+        SET timestamp_val = DATE_ADD(timestamp_val, INTERVAL hour_offset HOUR);
+        SET timestamp_val = DATE_ADD(timestamp_val, INTERVAL minute_offset MINUTE);
+        
+        IF sensor_idx % 3 = 0 THEN
+            SET sensor_name_var = 'Temperature Sensor 1';
+            SET sensor_type_var = 'temperature';
+            SET unit_var = 'Celsius';
+            SET base_value = 75.0;
+            SET reading_val = base_value + (RAND() * 15 - 5);
+            SET status_val = IF(reading_val > 80, 'warning', IF(reading_val > 85, 'critical', 'normal'));
+        ELSEIF sensor_idx % 3 = 1 THEN
+            SET sensor_name_var = 'Pressure Sensor 1';
+            SET sensor_type_var = 'pressure';
+            SET unit_var = 'bar';
+            SET base_value = 8.5;
+            SET reading_val = base_value + (RAND() * 1.0 - 0.5);
+            SET status_val = IF(reading_val < 7.5 OR reading_val > 9.5, 'warning', 'normal');
+        ELSE
+            SET sensor_name_var = 'Vibration Sensor 1';
+            SET sensor_type_var = 'vibration';
+            SET unit_var = 'mm/s';
+            SET base_value = 2.3;
+            SET reading_val = base_value + (RAND() * 2.0 - 1.0);
+            SET status_val = IF(reading_val > 4.0, 'warning', IF(reading_val > 6.0, 'critical', 'normal'));
+        END IF;
+        
+        INSERT INTO plc_sensor_readings (asset_id, sensor_name, sensor_type, reading_value, unit, reading_timestamp, status)
+        VALUES (asset_id_var, sensor_name_var, sensor_type_var, reading_val, unit_var, timestamp_val, status_val);
+        
+        SET sensor_idx = sensor_idx + 1;
+    END WHILE;
+    
+    -- Asset 2: Pump (Flow, Pressure, Temperature)
+    SET asset_id_var = 2;
+    SET sensor_idx = 0;
+    WHILE sensor_idx < 600 DO
+        SET day_offset = FLOOR(sensor_idx / 24);
+        SET hour_offset = sensor_idx % 24;
+        SET minute_offset = (sensor_idx * 15) % 60;
+        SET timestamp_val = DATE_ADD('2022-10-01 00:00:00', INTERVAL day_offset DAY);
+        SET timestamp_val = DATE_ADD(timestamp_val, INTERVAL hour_offset HOUR);
+        SET timestamp_val = DATE_ADD(timestamp_val, INTERVAL minute_offset MINUTE);
+        
+        IF sensor_idx % 3 = 0 THEN
+            SET sensor_name_var = 'Flow Sensor 1';
+            SET sensor_type_var = 'flow';
+            SET unit_var = 'L/min';
+            SET base_value = 125.0;
+            SET reading_val = base_value + (RAND() * 30 - 15);
+            SET status_val = IF(reading_val < 100 OR reading_val > 150, 'warning', 'normal');
+        ELSEIF sensor_idx % 3 = 1 THEN
+            SET sensor_name_var = 'Pressure Sensor 1';
+            SET sensor_type_var = 'pressure';
+            SET unit_var = 'bar';
+            SET base_value = 3.2;
+            SET reading_val = base_value + (RAND() * 0.8 - 0.4);
+            SET status_val = IF(reading_val < 2.5 OR reading_val > 4.0, 'warning', 'normal');
+        ELSE
+            SET sensor_name_var = 'Temperature Sensor 1';
+            SET sensor_type_var = 'temperature';
+            SET unit_var = 'Celsius';
+            SET base_value = 45.0;
+            SET reading_val = base_value + (RAND() * 10 - 5);
+            SET status_val = IF(reading_val > 55, 'warning', 'normal');
+        END IF;
+        
+        INSERT INTO plc_sensor_readings (asset_id, sensor_name, sensor_type, reading_value, unit, reading_timestamp, status)
+        VALUES (asset_id_var, sensor_name_var, sensor_type_var, reading_val, unit_var, timestamp_val, status_val);
+        
+        SET sensor_idx = sensor_idx + 1;
+    END WHILE;
+    
+    -- Asset 3: Conveyor (Speed, Load)
+    SET asset_id_var = 3;
+    SET sensor_idx = 0;
+    WHILE sensor_idx < 400 DO  -- 200 readings per sensor type * 2 sensors
+        SET day_offset = FLOOR(sensor_idx / 24);
+        SET hour_offset = sensor_idx % 24;
+        SET minute_offset = (sensor_idx * 15) % 60;
+        SET timestamp_val = DATE_ADD('2022-10-01 00:00:00', INTERVAL day_offset DAY);
+        SET timestamp_val = DATE_ADD(timestamp_val, INTERVAL hour_offset HOUR);
+        SET timestamp_val = DATE_ADD(timestamp_val, INTERVAL minute_offset MINUTE);
+        
+        IF sensor_idx % 2 = 0 THEN
+            SET sensor_name_var = 'Speed Sensor 1';
+            SET sensor_type_var = 'speed';
+            SET unit_var = 'm/s';
+            SET base_value = 1.5;
+            SET reading_val = base_value + (RAND() * 0.5 - 0.25);
+            SET status_val = IF(reading_val < 1.0 OR reading_val > 2.0, 'warning', 'normal');
+        ELSE
+            SET sensor_name_var = 'Load Sensor 1';
+            SET sensor_type_var = 'load';
+            SET unit_var = 'kg';
+            SET base_value = 850.0;
+            SET reading_val = base_value + (RAND() * 200 - 100);
+            SET status_val = IF(reading_val > 1000, 'warning', 'normal');
+        END IF;
+        
+        INSERT INTO plc_sensor_readings (asset_id, sensor_name, sensor_type, reading_value, unit, reading_timestamp, status)
+        VALUES (asset_id_var, sensor_name_var, sensor_type_var, reading_val, unit_var, timestamp_val, status_val);
+        
+        SET sensor_idx = sensor_idx + 1;
+    END WHILE;
+    
+    -- Asset 4: HVAC (Temperature, Humidity, Pressure)
+    SET asset_id_var = 4;
+    SET sensor_idx = 0;
+    WHILE sensor_idx < 600 DO
+        SET day_offset = FLOOR(sensor_idx / 24);
+        SET hour_offset = sensor_idx % 24;
+        SET minute_offset = (sensor_idx * 15) % 60;
+        SET timestamp_val = DATE_ADD('2022-10-01 00:00:00', INTERVAL day_offset DAY);
+        SET timestamp_val = DATE_ADD(timestamp_val, INTERVAL hour_offset HOUR);
+        SET timestamp_val = DATE_ADD(timestamp_val, INTERVAL minute_offset MINUTE);
+        
+        IF sensor_idx % 3 = 0 THEN
+            SET sensor_name_var = 'Temperature Sensor 1';
+            SET sensor_type_var = 'temperature';
+            SET unit_var = 'Celsius';
+            SET base_value = 22.5;
+            SET reading_val = base_value + (RAND() * 5 - 2.5);
+            SET status_val = IF(reading_val < 18 OR reading_val > 26, 'warning', 'normal');
+        ELSEIF sensor_idx % 3 = 1 THEN
+            SET sensor_name_var = 'Humidity Sensor 1';
+            SET sensor_type_var = 'humidity';
+            SET unit_var = '%';
+            SET base_value = 45.0;
+            SET reading_val = base_value + (RAND() * 20 - 10);
+            SET status_val = IF(reading_val < 30 OR reading_val > 60, 'warning', 'normal');
+        ELSE
+            SET sensor_name_var = 'Pressure Sensor 1';
+            SET sensor_type_var = 'pressure';
+            SET unit_var = 'bar';
+            SET base_value = 1.0;
+            SET reading_val = base_value + (RAND() * 0.3 - 0.15);
+            SET status_val = IF(reading_val < 0.7 OR reading_val > 1.3, 'warning', 'normal');
+        END IF;
+        
+        INSERT INTO plc_sensor_readings (asset_id, sensor_name, sensor_type, reading_value, unit, reading_timestamp, status)
+        VALUES (asset_id_var, sensor_name_var, sensor_type_var, reading_val, unit_var, timestamp_val, status_val);
+        
+        SET sensor_idx = sensor_idx + 1;
+    END WHILE;
+    
+    -- Asset 5: Generator (Voltage, Current, Frequency)
+    SET asset_id_var = 5;
+    SET sensor_idx = 0;
+    WHILE sensor_idx < 600 DO
+        SET day_offset = FLOOR(sensor_idx / 24);
+        SET hour_offset = sensor_idx % 24;
+        SET minute_offset = (sensor_idx * 15) % 60;
+        SET timestamp_val = DATE_ADD('2022-10-01 00:00:00', INTERVAL day_offset DAY);
+        SET timestamp_val = DATE_ADD(timestamp_val, INTERVAL hour_offset HOUR);
+        SET timestamp_val = DATE_ADD(timestamp_val, INTERVAL minute_offset MINUTE);
+        
+        IF sensor_idx % 3 = 0 THEN
+            SET sensor_name_var = 'Voltage Sensor 1';
+            SET sensor_type_var = 'voltage';
+            SET unit_var = 'V';
+            SET base_value = 480.0;
+            SET reading_val = base_value + (RAND() * 20 - 10);
+            SET status_val = IF(reading_val < 460 OR reading_val > 500, 'warning', 'normal');
+        ELSEIF sensor_idx % 3 = 1 THEN
+            SET sensor_name_var = 'Current Sensor 1';
+            SET sensor_type_var = 'current';
+            SET unit_var = 'A';
+            SET base_value = 125.0;
+            SET reading_val = base_value + (RAND() * 30 - 15);
+            SET status_val = IF(reading_val > 150, 'warning', 'normal');
+        ELSE
+            SET sensor_name_var = 'Frequency Sensor 1';
+            SET sensor_type_var = 'frequency';
+            SET unit_var = 'Hz';
+            SET base_value = 60.0;
+            SET reading_val = base_value + (RAND() * 2 - 1);
+            SET status_val = IF(reading_val < 58 OR reading_val > 62, 'warning', 'normal');
+        END IF;
+        
+        INSERT INTO plc_sensor_readings (asset_id, sensor_name, sensor_type, reading_value, unit, reading_timestamp, status)
+        VALUES (asset_id_var, sensor_name_var, sensor_type_var, reading_val, unit_var, timestamp_val, status_val);
+        
+        SET sensor_idx = sensor_idx + 1;
+    END WHILE;
+    
+    -- Asset 6: Motor (Temperature, Vibration)
+    SET asset_id_var = 6;
+    SET sensor_idx = 0;
+    WHILE sensor_idx < 400 DO
+        SET day_offset = FLOOR(sensor_idx / 24);
+        SET hour_offset = sensor_idx % 24;
+        SET minute_offset = (sensor_idx * 15) % 60;
+        SET timestamp_val = DATE_ADD('2022-10-01 00:00:00', INTERVAL day_offset DAY);
+        SET timestamp_val = DATE_ADD(timestamp_val, INTERVAL hour_offset HOUR);
+        SET timestamp_val = DATE_ADD(timestamp_val, INTERVAL minute_offset MINUTE);
+        
+        IF sensor_idx % 2 = 0 THEN
+            SET sensor_name_var = 'Temperature Sensor 1';
+            SET sensor_type_var = 'temperature';
+            SET unit_var = 'Celsius';
+            SET base_value = 65.0;
+            SET reading_val = base_value + (RAND() * 15 - 7.5);
+            SET status_val = IF(reading_val > 80, 'warning', IF(reading_val > 90, 'critical', 'normal'));
+        ELSE
+            SET sensor_name_var = 'Vibration Sensor 1';
+            SET sensor_type_var = 'vibration';
+            SET unit_var = 'mm/s';
+            SET base_value = 1.8;
+            SET reading_val = base_value + (RAND() * 1.5 - 0.75);
+            SET status_val = IF(reading_val > 3.5, 'warning', IF(reading_val > 5.0, 'critical', 'normal'));
+        END IF;
+        
+        INSERT INTO plc_sensor_readings (asset_id, sensor_name, sensor_type, reading_value, unit, reading_timestamp, status)
+        VALUES (asset_id_var, sensor_name_var, sensor_type_var, reading_val, unit_var, timestamp_val, status_val);
+        
+        SET sensor_idx = sensor_idx + 1;
+    END WHILE;
+    
+    -- Asset 7: Boiler (Temperature, Pressure)
+    SET asset_id_var = 7;
+    SET sensor_idx = 0;
+    WHILE sensor_idx < 400 DO
+        SET day_offset = FLOOR(sensor_idx / 24);
+        SET hour_offset = sensor_idx % 24;
+        SET minute_offset = (sensor_idx * 15) % 60;
+        SET timestamp_val = DATE_ADD('2022-10-01 00:00:00', INTERVAL day_offset DAY);
+        SET timestamp_val = DATE_ADD(timestamp_val, INTERVAL hour_offset HOUR);
+        SET timestamp_val = DATE_ADD(timestamp_val, INTERVAL minute_offset MINUTE);
+        
+        IF sensor_idx % 2 = 0 THEN
+            SET sensor_name_var = 'Temperature Sensor 1';
+            SET sensor_type_var = 'temperature';
+            SET unit_var = 'Celsius';
+            SET base_value = 95.0;
+            SET reading_val = base_value + (RAND() * 10 - 5);
+            SET status_val = IF(reading_val > 105, 'warning', IF(reading_val > 110, 'critical', 'normal'));
+        ELSE
+            SET sensor_name_var = 'Pressure Sensor 1';
+            SET sensor_type_var = 'pressure';
+            SET unit_var = 'bar';
+            SET base_value = 12.5;
+            SET reading_val = base_value + (RAND() * 2.0 - 1.0);
+            SET status_val = IF(reading_val < 10 OR reading_val > 15, 'warning', 'normal');
+        END IF;
+        
+        INSERT INTO plc_sensor_readings (asset_id, sensor_name, sensor_type, reading_value, unit, reading_timestamp, status)
+        VALUES (asset_id_var, sensor_name_var, sensor_type_var, reading_val, unit_var, timestamp_val, status_val);
+        
+        SET sensor_idx = sensor_idx + 1;
+    END WHILE;
+    
+    -- Asset 8: Turbine (Vibration, Temperature, Pressure)
+    SET asset_id_var = 8;
+    SET sensor_idx = 0;
+    WHILE sensor_idx < 600 DO
+        SET day_offset = FLOOR(sensor_idx / 24);
+        SET hour_offset = sensor_idx % 24;
+        SET minute_offset = (sensor_idx * 15) % 60;
+        SET timestamp_val = DATE_ADD('2022-10-01 00:00:00', INTERVAL day_offset DAY);
+        SET timestamp_val = DATE_ADD(timestamp_val, INTERVAL hour_offset HOUR);
+        SET timestamp_val = DATE_ADD(timestamp_val, INTERVAL minute_offset MINUTE);
+        
+        IF sensor_idx % 3 = 0 THEN
+            SET sensor_name_var = 'Vibration Sensor 1';
+            SET sensor_type_var = 'vibration';
+            SET unit_var = 'mm/s';
+            SET base_value = 4.2;
+            SET reading_val = base_value + (RAND() * 3.0 - 1.5);
+            SET status_val = IF(reading_val > 5.0, 'warning', IF(reading_val > 7.0, 'critical', 'normal'));
+        ELSEIF sensor_idx % 3 = 1 THEN
+            SET sensor_name_var = 'Temperature Sensor 1';
+            SET sensor_type_var = 'temperature';
+            SET unit_var = 'Celsius';
+            SET base_value = 550.0;
+            SET reading_val = base_value + (RAND() * 50 - 25);
+            SET status_val = IF(reading_val > 600, 'warning', IF(reading_val > 650, 'critical', 'normal'));
+        ELSE
+            SET sensor_name_var = 'Pressure Sensor 1';
+            SET sensor_type_var = 'pressure';
+            SET unit_var = 'bar';
+            SET base_value = 45.0;
+            SET reading_val = base_value + (RAND() * 5.0 - 2.5);
+            SET status_val = IF(reading_val < 40 OR reading_val > 50, 'warning', 'normal');
+        END IF;
+        
+        INSERT INTO plc_sensor_readings (asset_id, sensor_name, sensor_type, reading_value, unit, reading_timestamp, status)
+        VALUES (asset_id_var, sensor_name_var, sensor_type_var, reading_val, unit_var, timestamp_val, status_val);
+        
+        SET sensor_idx = sensor_idx + 1;
+    END WHILE;
+END$$
 
--- Insert sample maintenance tasks
-INSERT INTO mantainance_tasks (order_id, task_name, task_description, assigned_employee_id, status, estimated_hours, actual_hours, start_time, end_time, notes) VALUES
-(1, 'Oil Change', 'Replace compressor oil and filter', 1, 'pending', 2.0, NULL, NULL, NULL, NULL),
-(1, 'Inspection', 'Full system inspection and testing', 1, 'pending', 3.0, NULL, NULL, NULL, NULL),
-(2, 'Visual Inspection', 'Check pump for leaks and wear', 2, 'completed', 1.0, 0.75, '2022-11-15 09:00:00', '2022-11-15 09:45:00', 'No issues found'),
-(2, 'Performance Test', 'Test pump flow and pressure', 2, 'completed', 1.5, 1.5, '2022-11-15 09:45:00', '2022-11-15 11:15:00', 'Performance within specifications'),
-(3, 'Belt Alignment', 'Adjust conveyor belt alignment', 3, 'completed', 2.0, 2.5, '2022-11-05 10:00:00', '2022-11-05 12:30:00', 'Required additional adjustments'),
-(3, 'Belt Replacement', 'Replace worn section of belt', 3, 'completed', 2.0, 2.0, '2022-11-05 12:30:00', '2022-11-05 14:30:00', 'Belt replaced successfully'),
-(4, 'Filter Replacement', 'Replace HVAC air filters', 4, 'completed', 1.0, 1.0, '2022-11-10 08:00:00', '2022-11-10 09:00:00', NULL),
-(4, 'Condenser Cleaning', 'Clean condenser coils', 4, 'in_progress', 3.0, NULL, '2022-11-10 09:00:00', NULL, 'In progress'),
-(4, 'System Testing', 'Test HVAC system performance', 4, 'pending', 2.0, NULL, NULL, NULL, NULL),
-(5, 'Oil Analysis', 'Collect and analyze generator oil sample', 7, 'pending', 1.0, NULL, NULL, NULL, NULL),
-(5, 'Load Testing', 'Perform generator load test', 7, 'pending', 4.0, NULL, NULL, NULL, NULL),
-(6, 'Post-Repair Inspection', 'Inspect motor after bearing replacement', 1, 'completed', 1.5, 2.0, '2022-10-05 11:00:00', '2022-10-05 13:00:00', 'Motor running smoothly'),
-(7, 'Boiler Inspection', 'Full boiler safety inspection', 4, 'pending', 4.0, NULL, NULL, NULL, NULL),
-(7, 'Pressure Test', 'Test boiler pressure systems', 4, 'pending', 2.0, NULL, NULL, NULL, NULL),
-(8, 'Vibration Analysis', 'Perform detailed vibration analysis', 7, 'completed', 3.0, 3.5, '2022-11-02 06:00:00', '2022-11-02 09:30:00', 'Bearing wear confirmed'),
-(8, 'Bearing Replacement', 'Replace turbine bearings', 7, 'in_progress', 12.0, NULL, '2022-11-02 09:30:00', NULL, 'Replacement in progress'),
-(9, 'Emergency Shutdown', 'Safely shutdown compressor', 6, 'completed', 0.5, 0.5, '2022-11-20 16:00:00', '2022-11-20 16:30:00', NULL),
-(9, 'Diagnostic Check', 'Diagnose compressor issue', 6, 'completed', 2.0, 2.5, '2022-11-20 16:30:00', '2022-11-20 19:00:00', 'Found minor issue, resolved'),
-(9, 'Restart and Test', 'Restart compressor and verify operation', 6, 'completed', 1.0, 1.0, '2022-11-20 19:00:00', '2022-11-20 20:00:00', 'System operational'),
-(10, 'Remove Old Control Panel', 'Remove existing control panel', 2, 'completed', 4.0, 3.5, '2022-08-20 08:00:00', '2022-08-20 11:30:00', NULL),
-(10, 'Install New Control Panel', 'Install and wire new control panel', 2, 'completed', 8.0, 8.5, '2022-08-20 11:30:00', '2022-08-21 20:00:00', 'Installation completed'),
-(10, 'System Configuration', 'Configure new control system', 2, 'completed', 4.0, 4.0, '2022-08-22 08:00:00', '2022-08-22 12:00:00', 'Configuration successful'),
-(10, 'Testing and Commissioning', 'Test new system and commission', 2, 'completed', 5.0, 5.0, '2022-08-22 12:00:00', '2022-08-22 17:00:00', 'System fully operational');
+DELIMITER ;
+
+CALL generate_sensor_readings();
+DROP PROCEDURE IF EXISTS generate_sensor_readings;
+
+-- Insert sample maintenance orders (200x more data per asset)
+DELIMITER $$
+
+CREATE PROCEDURE IF NOT EXISTS generate_maintenance_orders()
+BEGIN
+    DECLARE asset_id_var INT;
+    DECLARE order_idx INT;
+    DECLARE employee_id_var INT;
+    DECLARE order_type_var VARCHAR(20);
+    DECLARE priority_var VARCHAR(20);
+    DECLARE status_var VARCHAR(20);
+    DECLARE scheduled_date_var DATETIME;
+    DECLARE start_date_var DATETIME;
+    DECLARE completion_date_var DATETIME;
+    DECLARE estimated_cost_var DECIMAL(10,2);
+    DECLARE actual_cost_var DECIMAL(10,2);
+    DECLARE days_back INT;
+    DECLARE order_id_var INT;
+    
+    -- Generate orders for each asset (200 orders per asset)
+    SET asset_id_var = 1;
+    WHILE asset_id_var <= 8 DO
+        SET order_idx = 0;
+        WHILE order_idx < 200 DO
+            SET days_back = FLOOR(RAND() * 730);  -- Last 2 years
+            SET scheduled_date_var = DATE_SUB('2022-11-20 08:00:00', INTERVAL days_back DAY);
+            SET scheduled_date_var = DATE_ADD(scheduled_date_var, INTERVAL FLOOR(RAND() * 16) HOUR);
+            
+            -- Assign employee (1-8)
+            SET employee_id_var = 1 + FLOOR(RAND() * 8);
+            
+            -- Determine order type (70% preventive, 20% corrective, 8% emergency, 2% upgrade)
+            SET order_type_var = CASE
+                WHEN RAND() < 0.70 THEN 'preventive'
+                WHEN RAND() < 0.90 THEN 'corrective'
+                WHEN RAND() < 0.98 THEN 'emergency'
+                ELSE 'upgrade'
+            END;
+            
+            -- Determine priority based on order type
+            SET priority_var = CASE
+                WHEN order_type_var = 'emergency' THEN 'urgent'
+                WHEN order_type_var = 'corrective' AND RAND() < 0.5 THEN 'high'
+                WHEN order_type_var = 'preventive' AND RAND() < 0.3 THEN 'high'
+                WHEN order_type_var = 'preventive' AND RAND() < 0.7 THEN 'medium'
+                ELSE 'low'
+            END;
+            
+            -- Determine status (30% completed, 10% in_progress, 60% pending)
+            SET status_var = CASE
+                WHEN RAND() < 0.30 THEN 'completed'
+                WHEN RAND() < 0.40 THEN 'in_progress'
+                ELSE 'pending'
+            END;
+            
+            -- Set dates based on status
+            IF status_var = 'completed' THEN
+                SET start_date_var = scheduled_date_var;
+                SET completion_date_var = DATE_ADD(start_date_var, INTERVAL (1 + FLOOR(RAND() * 48)) HOUR);
+                SET actual_cost_var = estimated_cost_var * (0.9 + RAND() * 0.2);  -- 90-110% of estimated
+            ELSEIF status_var = 'in_progress' THEN
+                SET start_date_var = scheduled_date_var;
+                SET completion_date_var = NULL;
+                SET actual_cost_var = NULL;
+            ELSE
+                SET start_date_var = NULL;
+                SET completion_date_var = NULL;
+                SET actual_cost_var = NULL;
+            END IF;
+            
+            -- Set estimated cost based on asset and order type
+            SET estimated_cost_var = CASE
+                WHEN asset_id_var IN (5, 8) THEN 3000.00 + (RAND() * 12000.00)  -- Generator, Turbine
+                WHEN asset_id_var IN (1, 4) THEN 2000.00 + (RAND() * 5000.00)    -- Compressor, HVAC
+                WHEN asset_id_var IN (2, 3, 6, 7) THEN 500.00 + (RAND() * 3000.00)  -- Others
+                ELSE 1000.00 + (RAND() * 2000.00)
+            END;
+            
+            IF order_type_var = 'emergency' THEN
+                SET estimated_cost_var = estimated_cost_var * 1.5;
+            END IF;
+            
+            INSERT INTO mantainance_orders (asset_id, assigned_employee_id, order_type, priority, description, scheduled_date, start_date, completion_date, status, estimated_cost, actual_cost)
+            VALUES (
+                asset_id_var,
+                employee_id_var,
+                order_type_var,
+                priority_var,
+                CONCAT(order_type_var, ' maintenance for asset ', asset_id_var, ' - order ', order_idx + 1),
+                scheduled_date_var,
+                start_date_var,
+                completion_date_var,
+                status_var,
+                estimated_cost_var,
+                actual_cost_var
+            );
+            
+            SET order_idx = order_idx + 1;
+        END WHILE;
+        
+        SET asset_id_var = asset_id_var + 1;
+    END WHILE;
+END$$
+
+DELIMITER ;
+
+CALL generate_maintenance_orders();
+DROP PROCEDURE IF EXISTS generate_maintenance_orders;
+
+-- Insert sample maintenance tasks (200x more data - multiple tasks per order)
+DELIMITER $$
+
+CREATE PROCEDURE IF NOT EXISTS generate_maintenance_tasks()
+BEGIN
+    DECLARE order_id_var INT;
+    DECLARE task_idx INT;
+    DECLARE tasks_per_order INT;
+    DECLARE employee_id_var INT;
+    DECLARE status_var VARCHAR(20);
+    DECLARE estimated_hours_var DECIMAL(5,2);
+    DECLARE actual_hours_var DECIMAL(5,2);
+    DECLARE start_time_var DATETIME;
+    DECLARE end_time_var DATETIME;
+    DECLARE task_name_var VARCHAR(255);
+    DECLARE task_desc_var VARCHAR(500);
+    DECLARE order_scheduled_date DATETIME;
+    DECLARE order_start_date DATETIME;
+    DECLARE order_status VARCHAR(20);
+    DECLARE max_order_id INT;
+    DECLARE current_time_offset INT;
+    
+    -- Get the maximum order_id (all orders generated)
+    SELECT MAX(order_id) INTO max_order_id FROM mantainance_orders;
+    
+    SET order_id_var = 1;
+    WHILE order_id_var <= max_order_id DO
+        -- Get order information
+        SELECT scheduled_date, start_date, status 
+        INTO order_scheduled_date, order_start_date, order_status
+        FROM mantainance_orders 
+        WHERE order_id = order_id_var;
+        
+        -- Generate 1-5 tasks per order (average 2.5 tasks per order = ~200x more)
+        SET tasks_per_order = 1 + FLOOR(RAND() * 5);
+        SET task_idx = 0;
+        
+        WHILE task_idx < tasks_per_order DO
+            -- Assign employee (1-8)
+            SET employee_id_var = 1 + FLOOR(RAND() * 8);
+            
+            -- Task names based on order type and task index
+            SET task_name_var = CASE (task_idx % 10)
+                WHEN 0 THEN 'Visual Inspection'
+                WHEN 1 THEN 'Component Testing'
+                WHEN 2 THEN 'Cleaning and Lubrication'
+                WHEN 3 THEN 'Part Replacement'
+                WHEN 4 THEN 'System Calibration'
+                WHEN 5 THEN 'Performance Testing'
+                WHEN 6 THEN 'Safety Check'
+                WHEN 7 THEN 'Documentation Update'
+                WHEN 8 THEN 'Diagnostic Analysis'
+                ELSE 'Final Verification'
+            END;
+            
+            SET task_desc_var = CONCAT(task_name_var, ' for order ', order_id_var, ' task ', task_idx + 1);
+            
+            -- Determine status based on order status
+            IF order_status = 'completed' THEN
+                SET status_var = CASE
+                    WHEN RAND() < 0.9 THEN 'completed'
+                    ELSE 'pending'
+                END;
+            ELSEIF order_status = 'in_progress' THEN
+                SET status_var = CASE
+                    WHEN RAND() < 0.4 THEN 'completed'
+                    WHEN RAND() < 0.7 THEN 'in_progress'
+                    ELSE 'pending'
+                END;
+            ELSE
+                SET status_var = 'pending';
+            END IF;
+            
+            -- Set estimated hours (0.5 to 8 hours)
+            SET estimated_hours_var = 0.5 + (RAND() * 7.5);
+            
+            -- Set actual hours and times based on status
+            IF status_var = 'completed' THEN
+                SET actual_hours_var = estimated_hours_var * (0.8 + RAND() * 0.4);  -- 80-120% of estimated
+                
+                IF order_start_date IS NOT NULL THEN
+                    SET current_time_offset = FLOOR(RAND() * 8);  -- Hours offset
+                    SET start_time_var = DATE_ADD(order_start_date, INTERVAL current_time_offset HOUR);
+                    SET end_time_var = DATE_ADD(start_time_var, INTERVAL FLOOR(actual_hours_var * 60) MINUTE);
+                ELSE
+                    SET start_time_var = DATE_ADD(order_scheduled_date, INTERVAL FLOOR(RAND() * 8) HOUR);
+                    SET end_time_var = DATE_ADD(start_time_var, INTERVAL FLOOR(actual_hours_var * 60) MINUTE);
+                END IF;
+            ELSEIF status_var = 'in_progress' THEN
+                SET actual_hours_var = NULL;
+                IF order_start_date IS NOT NULL THEN
+                    SET start_time_var = DATE_ADD(order_start_date, INTERVAL FLOOR(RAND() * 4) HOUR);
+                ELSE
+                    SET start_time_var = order_scheduled_date;
+                END IF;
+                SET end_time_var = NULL;
+            ELSE
+                SET actual_hours_var = NULL;
+                SET start_time_var = NULL;
+                SET end_time_var = NULL;
+            END IF;
+            
+            INSERT INTO mantainance_tasks (order_id, task_name, task_description, assigned_employee_id, status, estimated_hours, actual_hours, start_time, end_time, notes)
+            VALUES (
+                order_id_var,
+                task_name_var,
+                task_desc_var,
+                employee_id_var,
+                status_var,
+                estimated_hours_var,
+                actual_hours_var,
+                start_time_var,
+                end_time_var,
+                CASE 
+                    WHEN status_var = 'completed' AND RAND() < 0.5 THEN 'Task completed successfully'
+                    WHEN status_var = 'in_progress' THEN 'Work in progress'
+                    ELSE NULL
+                END
+            );
+            
+            SET task_idx = task_idx + 1;
+        END WHILE;
+        
+        SET order_id_var = order_id_var + 1;
+    END WHILE;
+END$$
+
+DELIMITER ;
+
+CALL generate_maintenance_tasks();
+DROP PROCEDURE IF EXISTS generate_maintenance_tasks;
 
 -- Insert sample failure probability data (calculated values)
 INSERT INTO faliure_probability (asset_id, probability_score, risk_level, calculation_date, failure_count, warning_count, critical_sensor_count, days_since_maintenance, unresolved_failures, asset_age_days) VALUES
