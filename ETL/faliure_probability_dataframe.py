@@ -26,7 +26,7 @@ DB_CONFIG = {
     'host': os.getenv('DB_HOST', 'localhost'),
     'database': os.getenv('DB_NAME', 'palantir_maintenance'),
     'user': os.getenv('DB_USER', 'root'),
-    'password': os.getenv('DB_PASSWORD', ''),
+    'password': os.getenv('DB_PASSWORD', 'admin'),
     'port': int(os.getenv('DB_PORT', 3306))
 }
 
@@ -73,6 +73,8 @@ def extract_features_for_asset(asset_id, connection):
             AND reading_timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)
         """, (asset_id,))
         sensor_stats = cursor.fetchone()
+
+        
         
         # Sensor readings by type (last 30 days)
         cursor.execute("""
@@ -98,6 +100,7 @@ def extract_features_for_asset(asset_id, connection):
         
         # ===== FEATURES FROM assets_faliures =====
         
+
         # Failure history (last 365 days)
         cursor.execute("""
             SELECT 
@@ -122,6 +125,7 @@ def extract_features_for_asset(asset_id, connection):
         if failure_stats['last_failure_date']:
             days_since_last_failure = (datetime.now() - failure_stats['last_failure_date']).days
         
+
         # Failure types distribution
         cursor.execute("""
             SELECT 
@@ -141,13 +145,14 @@ def extract_features_for_asset(asset_id, connection):
         
         # ===== FEATURES FROM mantainance_tasks =====
         
+
         # Maintenance task statistics (last 365 days)
         cursor.execute("""
             SELECT 
                 COUNT(*) as total_tasks,
-                COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_tasks,
-                COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress_tasks,
-                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_tasks,
+                COUNT(CASE WHEN mt.status = 'completed' THEN 1 END) as completed_tasks,
+                COUNT(CASE WHEN mt.status = 'in_progress' THEN 1 END) as in_progress_tasks,
+                COUNT(CASE WHEN mt.status = 'pending' THEN 1 END) as pending_tasks,
                 AVG(estimated_hours) as avg_estimated_hours,
                 AVG(actual_hours) as avg_actual_hours,
                 SUM(actual_hours) as total_hours,
@@ -166,6 +171,7 @@ def extract_features_for_asset(asset_id, connection):
         if task_stats['last_completion_date']:
             days_since_last_task = (datetime.now() - task_stats['last_completion_date']).days
         
+
         # Maintenance order statistics
         cursor.execute("""
             SELECT 
@@ -190,6 +196,7 @@ def extract_features_for_asset(asset_id, connection):
         if order_stats['last_order_completion']:
             days_since_last_order = (datetime.now() - order_stats['last_order_completion']).days
         
+
         # Compile all features
         features = {
             'asset_id': asset_id,
@@ -265,11 +272,14 @@ def create_feature_dataframe(connection):
         # Get all assets
         cursor.execute("SELECT asset_id FROM assets")
         assets = cursor.fetchall()
+
         
         all_features = []
         
         for (asset_id,) in assets:
+
             features = extract_features_for_asset(asset_id, connection)
+
             if features:
                 all_features.append(features)
                 print(f"Extracted features for asset_id {asset_id}")
@@ -297,7 +307,8 @@ def create_feature_dataframe(connection):
         # Filter feature columns to only include those that exist in the table
         feature_columns = [col for col in df.columns 
                           if col in valid_columns and col not in ['asset_id', 'extraction_date']]
-        
+
+
         # Clear existing data (optional - you might want to keep historical data)
         cursor.execute("TRUNCATE TABLE faliure_probability_base")
         
