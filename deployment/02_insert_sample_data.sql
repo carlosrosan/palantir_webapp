@@ -75,50 +75,50 @@ INSERT INTO asset_costs (asset_id, cost_type, amount, cost_date, description, ve
 INSERT INTO assets_faliures (asset_id, failure_date, failure_type, severity, description, root_cause, downtime_hours, resolved, resolution_date) VALUES
 -- Asset 1: Compressor (sensor window Oct 1-25)
 (1, '2022-10-03 08:30:00', 'Mechanical Failure', 'medium', 'Compressor valve seal leakage detected', 'Normal wear from continuous operation', 3.5, TRUE, '2022-10-03 12:00:00'),
-(1, '2022-10-09 14:15:00', 'Pressure Failure', 'high', 'Compressor head gasket failure causing pressure loss', 'Excessive vibration and thermal stress', 8.5, TRUE, '2022-10-10 22:45:00'),
+-- (1, '2022-10-09 14:15:00', 'Pressure Failure', 'high', 'Compressor head gasket failure causing pressure loss', 'Excessive vibration and thermal stress', 8.5, TRUE, '2022-10-10 22:45:00'),
 (1, '2022-10-16 06:45:00', 'Electrical Failure', 'low', 'Control panel sensor malfunction', 'Electrical surge damage', 1.5, TRUE, '2022-10-16 08:15:00'),
 (1, '2022-10-22 11:20:00', 'Vibration Issue', 'medium', 'Abnormal vibration pattern detected', 'Loose mounting bolts', 2.0, TRUE, '2022-10-22 13:20:00'),
 
 -- Asset 2: Pump (sensor window Oct 1-25)
 (2, '2022-10-02 09:00:00', 'Mechanical Failure', 'low', 'Pump impeller slight imbalance', 'Sediment accumulation', 1.5, TRUE, '2022-10-02 10:30:00'),
-(2, '2022-10-08 15:30:00', 'Electrical Failure', 'medium', 'Pump motor starter failure', 'Overheating due to poor ventilation', 4.0, TRUE, '2022-10-08 19:30:00'),
+-- (2, '2022-10-08 15:30:00', 'Electrical Failure', 'medium', 'Pump motor starter failure', 'Overheating due to poor ventilation', 4.0, TRUE, '2022-10-08 19:30:00'),
 (2, '2022-10-14 07:45:00', 'Pressure Failure', 'high', 'Pressure seal rupture causing fluid leak', 'Material fatigue', 6.5, TRUE, '2022-10-14 14:15:00'),
 (2, '2022-10-21 12:00:00', 'Component Failure', 'medium', 'Flow sensor malfunction', 'Calibration drift', 2.0, TRUE, '2022-10-21 14:00:00'),
 
 -- Asset 3: Conveyor (sensor window Oct 1-17)
 (3, '2022-10-02 10:30:00', 'Mechanical Failure', 'low', 'Conveyor belt misalignment', 'Loose mounting bolts', 2.5, TRUE, '2022-10-02 13:00:00'),
-(3, '2022-10-06 14:00:00', 'Component Failure', 'medium', 'Roller bearing wear detected', 'Insufficient lubrication', 3.0, TRUE, '2022-10-06 17:00:00'),
+-- (3, '2022-10-06 14:00:00', 'Component Failure', 'medium', 'Roller bearing wear detected', 'Insufficient lubrication', 3.0, TRUE, '2022-10-06 17:00:00'),
 (3, '2022-10-11 08:15:00', 'Electrical Failure', 'low', 'Speed sensor intermittent reading', 'Loose wire connection', 1.0, TRUE, '2022-10-11 09:15:00'),
 (3, '2022-10-15 16:45:00', 'Mechanical Failure', 'high', 'Belt tension system failure', 'Tensioner spring fatigue', 5.0, TRUE, '2022-10-15 21:45:00'),
 
 -- Asset 4: HVAC (sensor window Oct 1-25)
 (4, '2022-10-04 11:00:00', 'Component Failure', 'medium', 'Compressor refrigerant leak', 'Seal degradation', 4.5, TRUE, '2022-10-04 15:30:00'),
 (4, '2022-10-10 09:30:00', 'Electrical Failure', 'high', 'Condenser fan motor burnout', 'Electrical overload', 8.0, TRUE, '2022-10-10 17:30:00'),
-(4, '2022-10-17 14:45:00', 'Pressure Failure', 'critical', 'HVAC condenser unit pressure failure', 'Corrosion and age-related wear', 24.0, TRUE, '2022-10-18 14:45:00'),
+-- (4, '2022-10-17 14:45:00', 'Pressure Failure', 'critical', 'HVAC condenser unit pressure failure', 'Corrosion and age-related wear', 24.0, TRUE, '2022-10-18 14:45:00'),
 (4, '2022-10-24 07:00:00', 'Component Failure', 'low', 'Thermostat sensor drift', 'Component aging', 1.5, TRUE, '2022-10-24 08:30:00'),
 
 -- Asset 5: Generator (sensor window Oct 1-25)
 (5, '2022-10-03 06:00:00', 'Electrical Failure', 'medium', 'Voltage regulator fluctuation', 'Capacitor degradation', 3.5, TRUE, '2022-10-03 09:30:00'),
 (5, '2022-10-10 12:30:00', 'Mechanical Failure', 'high', 'Fuel injector clogging', 'Fuel contamination', 7.0, TRUE, '2022-10-10 19:30:00'),
-(5, '2022-10-18 08:00:00', 'Electrical Failure', 'medium', 'Generator voltage regulator malfunction', 'Faulty regulator component', 6.0, TRUE, '2022-10-18 14:00:00'),
+-- (5, '2022-10-18 08:00:00', 'Electrical Failure', 'medium', 'Generator voltage regulator malfunction', 'Faulty regulator component', 6.0, TRUE, '2022-10-18 14:00:00'),
 (5, '2022-10-23 15:45:00', 'Component Failure', 'low', 'Cooling system thermostat failure', 'Thermostat stuck closed', 2.5, TRUE, '2022-10-23 18:15:00'),
 
 -- Asset 6: Motor (sensor window Oct 1-17)
 (6, '2022-10-02 13:00:00', 'Bearing Failure', 'medium', 'Motor bearing overheating', 'Lack of proper lubrication', 4.0, TRUE, '2022-10-02 17:00:00'),
-(6, '2022-10-07 09:45:00', 'Electrical Failure', 'low', 'Winding insulation degradation warning', 'Thermal stress', 2.0, TRUE, '2022-10-07 11:45:00'),
-(6, '2022-10-12 11:30:00', 'Vibration Issue', 'high', 'Severe motor shaft misalignment', 'Foundation settling', 8.5, TRUE, '2022-10-12 20:00:00'),
+-- (6, '2022-10-07 09:45:00', 'Electrical Failure', 'low', 'Winding insulation degradation warning', 'Thermal stress', 2.0, TRUE, '2022-10-07 11:45:00'),
+-- (6, '2022-10-12 11:30:00', 'Vibration Issue', 'high', 'Severe motor shaft misalignment', 'Foundation settling', 8.5, TRUE, '2022-10-12 20:00:00'),
 (6, '2022-10-16 14:15:00', 'Bearing Failure', 'medium', 'Motor bearing seal failure', 'Contamination ingress', 5.5, TRUE, '2022-10-16 19:45:00'),
 
 -- Asset 7: Boiler (sensor window Oct 1-17)
-(7, '2022-10-03 10:00:00', 'Pressure Failure', 'medium', 'Pressure relief valve partial blockage', 'Scale buildup', 3.0, TRUE, '2022-10-03 13:00:00'),
+-- (7, '2022-10-03 10:00:00', 'Pressure Failure', 'medium', 'Pressure relief valve partial blockage', 'Scale buildup', 3.0, TRUE, '2022-10-03 13:00:00'),
 (7, '2022-10-08 07:30:00', 'Component Failure', 'high', 'Burner nozzle clogging', 'Fuel impurities', 6.0, TRUE, '2022-10-08 13:30:00'),
 (7, '2022-10-12 16:00:00', 'Pressure Failure', 'critical', 'Boiler pressure relief valve failure', 'Valve stuck due to scale buildup', 12.0, TRUE, '2022-10-13 04:00:00'),
-(7, '2022-10-16 08:45:00', 'Electrical Failure', 'low', 'Flame sensor malfunction', 'Sensor contamination', 1.5, TRUE, '2022-10-16 10:15:00'),
+-- (7, '2022-10-16 08:45:00', 'Electrical Failure', 'low', 'Flame sensor malfunction', 'Sensor contamination', 1.5, TRUE, '2022-10-16 10:15:00'),
 
 -- Asset 8: Turbine (sensor window Oct 1-25)
-(8, '2022-10-05 08:30:00', 'Vibration Issue', 'medium', 'Minor turbine vibration increase detected', 'Bearing wear initial stage', 2.0, TRUE, '2022-10-05 10:30:00'),
-(8, '2022-10-12 14:00:00', 'Component Failure', 'high', 'Turbine blade tip erosion', 'Particulate matter in airflow', 10.0, TRUE, '2022-10-13 00:00:00'),
-(8, '2022-10-19 06:15:00', 'Pressure Failure', 'medium', 'Combustion chamber pressure anomaly', 'Fuel mixture inconsistency', 4.5, TRUE, '2022-10-19 10:45:00'),
+-- (8, '2022-10-05 08:30:00', 'Vibration Issue', 'medium', 'Minor turbine vibration increase detected', 'Bearing wear initial stage', 2.0, TRUE, '2022-10-05 10:30:00'),
+-- (8, '2022-10-12 14:00:00', 'Component Failure', 'high', 'Turbine blade tip erosion', 'Particulate matter in airflow', 10.0, TRUE, '2022-10-13 00:00:00'),
+-- (8, '2022-10-19 06:15:00', 'Pressure Failure', 'medium', 'Combustion chamber pressure anomaly', 'Fuel mixture inconsistency', 4.5, TRUE, '2022-10-19 10:45:00'),
 (8, '2022-10-24 11:45:00', 'Vibration Issue', 'critical', 'Excessive turbine vibration detected', 'Bearing wear requiring replacement', 0.0, FALSE, NULL);
 
 -- Insert sample PLC sensor readings (200x more data per asset)
