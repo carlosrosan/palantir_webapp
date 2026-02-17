@@ -1,10 +1,27 @@
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.db import connection
 from django.db.models import Q, Count, Sum, Avg
 from .models import (
     Asset, AssetCost, AssetFailure, PLCSensorReading,
     MaintenanceOrder, FailureProbability, MaintenanceCost, FailurePrediction
 )
+
+# Columns in faliure_probability_base that can be graphed over time (numeric or date converted to value)
+FAILURE_PROBABILITY_BASE_CHART_COLUMNS = [
+    'asset_age_days', 'sensor_total_readings_30d', 'sensor_warning_count_30d', 'sensor_critical_count_30d',
+    'sensor_avg_normal_value', 'sensor_avg_warning_value', 'sensor_avg_critical_value',
+    'sensor_max_value', 'sensor_min_value', 'sensor_std_value',
+    'failure_count_365d', 'failure_critical_count', 'failure_high_count', 'failure_medium_count', 'failure_low_count',
+    'failure_avg_downtime', 'failure_total_downtime', 'failure_unresolved_count', 'days_since_last_failure',
+    'task_total_365d', 'task_completed_count', 'task_in_progress_count', 'task_pending_count',
+    'task_avg_estimated_hours', 'task_avg_actual_hours', 'task_total_hours', 'days_since_last_task',
+    'order_total_365d', 'order_preventive_count', 'order_corrective_count', 'order_emergency_count', 'order_completed_count',
+    'order_avg_estimated_cost', 'order_avg_actual_cost', 'order_total_actual_cost', 'days_since_last_order',
+    'rpms', 'mechanical_load', 'vibration_acceleration', 'amplitude',
+    'max_acceleration_last_day', 'variance_acceleration_last_day', 'inner_race_vibration', 'outer_race_vibration',
+    'faliure',
+]
 
 
 def index(request):
@@ -70,6 +87,7 @@ def asset_details(request, asset_id):
     total_failures = AssetFailure.objects.filter(asset=asset).count()
     unresolved_failures = AssetFailure.objects.filter(asset=asset, resolved=False).count()
     
+    chart_columns = [(c, c.replace('_', ' ').title()) for c in FAILURE_PROBABILITY_BASE_CHART_COLUMNS]
     context = {
         'asset': asset,
         'recent_costs': recent_costs,
@@ -79,9 +97,30 @@ def asset_details(request, asset_id):
         'total_costs': total_costs,
         'total_failures': total_failures,
         'unresolved_failures': unresolved_failures,
+        'failure_probability_base_columns': chart_columns,
     }
     
     return render(request, 'maintenance/asset_details.html', context)
+
+
+def asset_failure_probability_base_chart_data(request, asset_id):
+    """Return JSON time series for a selected faliure_probability_base column (reading_date vs column value)."""
+    get_object_or_404(Asset, asset_id=asset_id)
+    column = request.GET.get('column', '').strip()
+    if not column or column not in FAILURE_PROBABILITY_BASE_CHART_COLUMNS:
+        return JsonResponse({'error': 'Invalid or missing column'}, status=400)
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f'SELECT reading_date, `{column}` FROM faliure_probability_base WHERE asset_id = %s ORDER BY reading_date',
+            [asset_id],
+        )
+        rows = cursor.fetchall()
+    labels = []
+    values = []
+    for reading_date, value in rows:
+        labels.append(reading_date.isoformat() if hasattr(reading_date, 'isoformat') else str(reading_date))
+        values.append(float(value) if value is not None else None)
+    return JsonResponse({'labels': labels, 'values': values, 'column': column})
 
 
 def maintenance_cost_dashboard(request):

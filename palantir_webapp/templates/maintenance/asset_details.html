@@ -46,6 +46,25 @@
     </div>
 </div>
 
+<div class="card">
+    <h2>Failure Probability Base – Time Series</h2>
+    <p style="margin-bottom: 1rem; color: #666;">Select a metric to view its value over time for this asset.</p>
+    <div style="margin-bottom: 1rem;">
+        <label for="chart-column-select" style="margin-right: 0.5rem;">Metric:</label>
+        <select id="chart-column-select" style="padding: 0.5rem 1rem; min-width: 280px; font-size: 1rem;">
+            {% for col_key, col_label in failure_probability_base_columns %}
+            <option value="{{ col_key }}">{{ col_label }}</option>
+            {% empty %}
+            <option value="">No metrics available</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div style="position: relative; height: 320px;">
+        <canvas id="failure-probability-base-chart" width="800" height="320"></canvas>
+    </div>
+    <p id="chart-no-data" style="display: none; margin-top: 1rem; color: #888;">No time series data for this asset.</p>
+</div>
+
 {% if asset.failure_probability %}
 <div class="card">
     <h2>Failure Probability Analysis</h2>
@@ -303,5 +322,74 @@
         </tbody>
     </table>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+    var assetId = {{ asset.asset_id }};
+    var chartUrl = "{% url 'maintenance:asset_failure_probability_base_chart' asset.asset_id %}";
+    var selectEl = document.getElementById('chart-column-select');
+    var canvas = document.getElementById('failure-probability-base-chart');
+    var noDataEl = document.getElementById('chart-no-data');
+    var chart = null;
+
+    function loadChartData(column) {
+        if (!column) return;
+        var url = chartUrl + '?column=' + encodeURIComponent(column);
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.error) {
+                    if (chart) { chart.destroy(); chart = null; }
+                    noDataEl.style.display = 'block';
+                    return;
+                }
+                noDataEl.style.display = (data.labels.length === 0) ? 'block' : 'none';
+                var values = data.values.map(function(v) { return v === null ? NaN : v; });
+                if (chart) {
+                    chart.data.labels = data.labels;
+                    chart.data.datasets[0].data = values;
+                    chart.data.datasets[0].label = data.column.replace(/_/g, ' ');
+                    chart.update();
+                } else {
+                    chart = new Chart(canvas, {
+                        type: 'line',
+                        data: {
+                            labels: data.labels,
+                            datasets: [{
+                                label: data.column.replace(/_/g, ' '),
+                                data: values,
+                                borderColor: 'rgb(52, 152, 219)',
+                                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                                fill: true,
+                                tension: 0.2,
+                                spanGaps: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: true } },
+                            scales: {
+                                x: { title: { display: true, text: 'Reading date' } },
+                                y: { title: { display: true, text: 'Value' }, beginAtZero: false }
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(function() {
+                if (chart) { chart.destroy(); chart = null; }
+                noDataEl.textContent = 'Error loading chart data.';
+                noDataEl.style.display = 'block';
+            });
+    }
+
+    if (selectEl && canvas) {
+        selectEl.addEventListener('change', function() { loadChartData(this.value); });
+        loadChartData(selectEl.value);
+    }
+})();
+</script>
 {% endblock %}
 

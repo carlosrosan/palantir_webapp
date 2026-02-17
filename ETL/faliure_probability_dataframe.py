@@ -1,14 +1,12 @@
 """
 ETL Script for Failure Probability Feature Extraction (Daily Granularity)
 
-This script extracts features from:
-- plc_sensor_readings: sensor readings, warnings, critical statuses
-- assets_faliures: historical failure data, severity, resolution status
-- mantainance_tasks: maintenance task history, completion times, status
+Features extracted (industrial predictive maintenance - pumps and motors):
+- Mechanical vibration, RPM, power, electrical current, pressure, flow (from plc_sensor_readings, last 30d avg)
+- Asset service days, asset service hours
+- Days since last failure, days since last (visual) inspection
 
-Output: Creates/updates the faliure_probability_base table in MySQL with feature vectors
-        One row per asset per day (reading_date) with a 'faliure' boolean indicating
-        if there's a failure in the next 7 days for that asset.
+Output: faliure_probability_base table with one row per asset per day and 'faliure' = failure in next 7 days.
 """
 
 import mysql.connector
@@ -40,9 +38,11 @@ def get_date_range(connection):
     cursor = connection.cursor(dictionary=True)
     cursor.execute("""
         SELECT 
-            MIN(DATE(reading_timestamp)) as min_date,
-            MAX(DATE(reading_timestamp)) as max_date
-        FROM plc_sensor_readings
+            -- MIN(DATE(reading_timestamp)) as min_date,
+            -- MAX(DATE(reading_timestamp)) as max_date
+            DATE('2022-01-01') as min_date,
+            DATE('2023-01-31') as max_date
+        -- FROM plc_sensor_readings
     """)
     result = cursor.fetchone()
     cursor.close()
@@ -56,7 +56,7 @@ def get_failure_dates(connection):
     """
     cursor = connection.cursor(dictionary=True)
     cursor.execute("""
-        SELECT asset_id, DATE(failure_date) as failure_date
+        SELECT DISTINCT asset_id, DATE(failure_date) as failure_date
         FROM assets_faliures
     """)
     failures = cursor.fetchall()
@@ -87,184 +87,95 @@ def check_failure_in_next_week(asset_id, reading_date, failure_dict):
     return False
 
 
+def _float_or_none(val):
+    if val is None:
+        return None
+    try:
+        return float(val)
+    except (TypeError, ValueError):
+        return None
+
+
 def extract_features_for_asset_date(asset_id, reading_date, connection, failure_dict):
     """
-    Extract all features for a specific asset on a specific date.
-    
-    Returns a dictionary with all extracted features.
+    Extract only the required features for faliure_probability_base:
+    mechanical_vibration, rpm, power, electrical_current, pressure, flow,
+    asset_service_days, asset_service_hours, days_since_last_failure, days_since_last_inspection.
     """
     cursor = connection.cursor(dictionary=True)
     
-    # Get asset basic information
     cursor.execute("""
-        SELECT asset_id, asset_name, asset_type, installation_date, status
+        SELECT asset_id, installation_date
         FROM assets
         WHERE asset_id = %s
     """, (asset_id,))
     asset = cursor.fetchone()
-    
     if not asset:
         cursor.close()
         return None
     
     installation_date = asset['installation_date']
-    asset_age_days = (reading_date - installation_date).days
+    asset_service_days = (reading_date - installation_date).days
+    asset_service_hours = asset_service_days * 24.0
     
-    # ===== FEATURES FROM plc_sensor_readings (last 30 days from reading_date) =====
     date_30_days_ago = reading_date - timedelta(days=30)
     
+    # Sensor features: avg in last 30 days by type (vibration, rpm, power, current, pressure, flow)
     cursor.execute("""
-        SELECT 
-            COUNT(*) as total_readings,
-            COUNT(CASE WHEN status = 'warning' THEN 1 END) as warning_count,
-            COUNT(CASE WHEN status = 'critical' THEN 1 END) as critical_count,
-            AVG(CASE WHEN status = 'normal' THEN reading_value END) as avg_normal_value,
-            AVG(CASE WHEN status = 'warning' THEN reading_value END) as avg_warning_value,
-            AVG(CASE WHEN status = 'critical' THEN reading_value END) as avg_critical_value,
-            MAX(reading_value) as max_reading_value,
-            MIN(reading_value) as min_reading_value,
-            STDDEV(reading_value) as std_reading_value
+        SELECT
+            AVG(CASE WHEN sensor_type = 'vibration' THEN reading_value END) as mechanical_vibration,
+            AVG(CASE WHEN sensor_type = 'rpm' THEN reading_value END) as rpm,
+            AVG(CASE WHEN sensor_type = 'power' THEN reading_value END) as power,
+            AVG(CASE WHEN sensor_type = 'current' THEN reading_value END) as electrical_current,
+            AVG(CASE WHEN sensor_type = 'pressure' THEN reading_value END) as pressure,
+            AVG(CASE WHEN sensor_type = 'flow' THEN reading_value END) as flow
         FROM plc_sensor_readings
         WHERE asset_id = %s
         AND DATE(reading_timestamp) BETWEEN %s AND %s
     """, (asset_id, date_30_days_ago, reading_date))
-    sensor_stats = cursor.fetchone()
-
-    # ===== FEATURES FROM assets_faliures (last 365 days from reading_date) =====
-    date_365_days_ago = reading_date - timedelta(days=365)
-    
-    cursor.execute("""
-        SELECT 
-            COUNT(*) as failure_count,
-            COUNT(CASE WHEN severity = 'critical' THEN 1 END) as critical_failures,
-            COUNT(CASE WHEN severity = 'high' THEN 1 END) as high_failures,
-            COUNT(CASE WHEN severity = 'medium' THEN 1 END) as medium_failures,
-            COUNT(CASE WHEN severity = 'low' THEN 1 END) as low_failures,
-            AVG(downtime_hours) as avg_downtime,
-            SUM(downtime_hours) as total_downtime,
-            COUNT(CASE WHEN resolved = FALSE THEN 1 END) as unresolved_failures,
-            MAX(DATE(failure_date)) as last_failure_date
-        FROM assets_faliures
-        WHERE asset_id = %s
-        AND DATE(failure_date) BETWEEN %s AND %s
-    """, (asset_id, date_365_days_ago, reading_date))
-    failure_stats = cursor.fetchone()
+    sensor_row = cursor.fetchone()
     
     # Days since last failure
+    cursor.execute("""
+        SELECT MAX(DATE(failure_date)) as last_failure_date
+        FROM assets_faliures
+        WHERE asset_id = %s AND DATE(failure_date) <= %s
+    """, (asset_id, reading_date))
+    fail_row = cursor.fetchone()
     days_since_last_failure = None
-    if failure_stats['last_failure_date']:
-        days_since_last_failure = (reading_date - failure_stats['last_failure_date']).days
-
-    # ===== FEATURES FROM mantainance_tasks (last 365 days from reading_date) =====
-    cursor.execute("""
-        SELECT 
-            COUNT(*) as total_tasks,
-            COUNT(CASE WHEN mt.status = 'completed' THEN 1 END) as completed_tasks,
-            COUNT(CASE WHEN mt.status = 'in_progress' THEN 1 END) as in_progress_tasks,
-            COUNT(CASE WHEN mt.status = 'pending' THEN 1 END) as pending_tasks,
-            AVG(estimated_hours) as avg_estimated_hours,
-            AVG(actual_hours) as avg_actual_hours,
-            SUM(actual_hours) as total_hours,
-            MAX(DATE(end_time)) as last_completion_date
-        FROM mantainance_tasks mt
-        INNER JOIN mantainance_orders mo ON mt.order_id = mo.order_id
-        WHERE mo.asset_id = %s
-        AND (DATE(mt.start_time) BETWEEN %s AND %s
-             OR DATE(mt.created_at) BETWEEN %s AND %s)
-    """, (asset_id, date_365_days_ago, reading_date, date_365_days_ago, reading_date))
-    task_stats = cursor.fetchone()
+    if fail_row and fail_row['last_failure_date']:
+        days_since_last_failure = (reading_date - fail_row['last_failure_date']).days
     
-    # Days since last completed task
-    days_since_last_task = None
-    if task_stats['last_completion_date']:
-        days_since_last_task = (reading_date - task_stats['last_completion_date']).days
-
-    # ===== FEATURES FROM mantainance_orders (last 365 days from reading_date) =====
+    # Days since last (visual) inspection: last completed preventive order
     cursor.execute("""
-        SELECT 
-            COUNT(*) as total_orders,
-            COUNT(CASE WHEN order_type = 'preventive' THEN 1 END) as preventive_orders,
-            COUNT(CASE WHEN order_type = 'corrective' THEN 1 END) as corrective_orders,
-            COUNT(CASE WHEN order_type = 'emergency' THEN 1 END) as emergency_orders,
-            COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_orders,
-            AVG(estimated_cost) as avg_estimated_cost,
-            AVG(actual_cost) as avg_actual_cost,
-            SUM(actual_cost) as total_actual_cost,
-            MAX(DATE(completion_date)) as last_order_completion
+        SELECT MAX(DATE(completion_date)) as last_inspection
         FROM mantainance_orders
-        WHERE asset_id = %s
-        AND (DATE(scheduled_date) BETWEEN %s AND %s
-             OR DATE(created_at) BETWEEN %s AND %s)
-    """, (asset_id, date_365_days_ago, reading_date, date_365_days_ago, reading_date))
-    order_stats = cursor.fetchone()
+        WHERE asset_id = %s AND order_type = 'preventive' AND status = 'completed'
+        AND DATE(completion_date) <= %s
+    """, (asset_id, reading_date))
+    insp_row = cursor.fetchone()
+    days_since_last_inspection = None
+    if insp_row and insp_row['last_inspection']:
+        days_since_last_inspection = (reading_date - insp_row['last_inspection']).days
     
-    # Days since last order completion
-    days_since_last_order = None
-    if order_stats['last_order_completion']:
-        days_since_last_order = (reading_date - order_stats['last_order_completion']).days
-
-    # Check if there's a failure in the next 7 days
     has_failure_next_week = check_failure_in_next_week(asset_id, reading_date, failure_dict)
-
     cursor.close()
-
-    # Compile all features
-    features = {
+    
+    return {
         'asset_id': asset_id,
         'reading_date': reading_date,
-        
-        # Target variable: failure in next 7 days
         'faliure': has_failure_next_week,
-        
-        # Asset basic info
-        'asset_age_days': asset_age_days,
-        'asset_status': asset['status'],
-        
-        # Sensor features (last 30 days)
-        'sensor_total_readings_30d': sensor_stats['total_readings'] or 0,
-        'sensor_warning_count_30d': sensor_stats['warning_count'] or 0,
-        'sensor_critical_count_30d': sensor_stats['critical_count'] or 0,
-        'sensor_avg_normal_value': float(sensor_stats['avg_normal_value'] or 0),
-        'sensor_avg_warning_value': float(sensor_stats['avg_warning_value'] or 0),
-        'sensor_avg_critical_value': float(sensor_stats['avg_critical_value'] or 0),
-        'sensor_max_value': float(sensor_stats['max_reading_value'] or 0),
-        'sensor_min_value': float(sensor_stats['min_reading_value'] or 0),
-        'sensor_std_value': float(sensor_stats['std_reading_value'] or 0),
-        
-        # Failure features (last 365 days)
-        'failure_count_365d': failure_stats['failure_count'] or 0,
-        'failure_critical_count': failure_stats['critical_failures'] or 0,
-        'failure_high_count': failure_stats['high_failures'] or 0,
-        'failure_medium_count': failure_stats['medium_failures'] or 0,
-        'failure_low_count': failure_stats['low_failures'] or 0,
-        'failure_avg_downtime': float(failure_stats['avg_downtime'] or 0),
-        'failure_total_downtime': float(failure_stats['total_downtime'] or 0),
-        'failure_unresolved_count': failure_stats['unresolved_failures'] or 0,
+        'mechanical_vibration': _float_or_none(sensor_row['mechanical_vibration']) if sensor_row else None,
+        'rpm': _float_or_none(sensor_row['rpm']) if sensor_row else None,
+        'power': _float_or_none(sensor_row['power']) if sensor_row else None,
+        'electrical_current': _float_or_none(sensor_row['electrical_current']) if sensor_row else None,
+        'pressure': _float_or_none(sensor_row['pressure']) if sensor_row else None,
+        'flow': _float_or_none(sensor_row['flow']) if sensor_row else None,
+        'asset_service_days': asset_service_days,
+        'asset_service_hours': asset_service_hours,
         'days_since_last_failure': days_since_last_failure,
-        
-        # Maintenance task features (last 365 days)
-        'task_total_365d': task_stats['total_tasks'] or 0,
-        'task_completed_count': task_stats['completed_tasks'] or 0,
-        'task_in_progress_count': task_stats['in_progress_tasks'] or 0,
-        'task_pending_count': task_stats['pending_tasks'] or 0,
-        'task_avg_estimated_hours': float(task_stats['avg_estimated_hours'] or 0),
-        'task_avg_actual_hours': float(task_stats['avg_actual_hours'] or 0),
-        'task_total_hours': float(task_stats['total_hours'] or 0),
-        'days_since_last_task': days_since_last_task,
-        
-        # Maintenance order features (last 365 days)
-        'order_total_365d': order_stats['total_orders'] or 0,
-        'order_preventive_count': order_stats['preventive_orders'] or 0,
-        'order_corrective_count': order_stats['corrective_orders'] or 0,
-        'order_emergency_count': order_stats['emergency_orders'] or 0,
-        'order_completed_count': order_stats['completed_orders'] or 0,
-        'order_avg_estimated_cost': float(order_stats['avg_estimated_cost'] or 0),
-        'order_avg_actual_cost': float(order_stats['avg_actual_cost'] or 0),
-        'order_total_actual_cost': float(order_stats['total_actual_cost'] or 0),
-        'days_since_last_order': days_since_last_order,
+        'days_since_last_inspection': days_since_last_inspection,
     }
-    
-    return features
 
 
 def create_feature_dataframe(connection):

@@ -85,7 +85,7 @@ def calculate_failure_probability(asset_id, connection):
         warning_count = sensor_data['warning_count'] or 0
         critical_count = sensor_data['critical_count'] or 0
         
-        # Factor 3: Time since last maintenance (preventive)
+        # Factor 3: Time since last maintenance (preventive = visual inspections for pumps/motors)
         cursor.execute("""
             SELECT MAX(completion_date) as last_maintenance
             FROM mantainance_orders
