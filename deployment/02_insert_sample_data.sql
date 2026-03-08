@@ -211,7 +211,7 @@ BEGIN
     DECLARE v_done INT DEFAULT 0;
 
     DECLARE failure_cursor CURSOR FOR
-        SELECT asset_id, failure_date FROM assets_faliures ORDER BY asset_id, failure_date;
+        SELECT DISTINCT asset_id, failure_date FROM assets_faliures ORDER BY asset_id, failure_date;
 
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = 1;
 
@@ -236,7 +236,7 @@ BEGIN
         WHILE v_days_before <= 3 DO
             SET v_target_date = DATE_SUB(v_failure_day, INTERVAL (3 - v_days_before) DAY);
             -- Intensity ramps: 0.25 (3 days before), 0.5 (2 before), 0.75 (1 before), 1.0 (failure day = peak)
-            SET v_intensity = 0.25 + (v_days_before * 0.25);
+            SET v_intensity = 0.25 + (v_days_before * 0.5);
 
             UPDATE plc_sensor_readings
             SET
