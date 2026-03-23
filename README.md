@@ -2,7 +2,7 @@
 
 Repositorio del curso orientado a **técnicos de automatización industrial** y entornos **Industria 4.0**. Incluye una aplicación python para el aprendizaje en software de gestión de mantenimiento predictivo, integración con MySQL, scripts de despliegue de datos de ejemplo y notebooks de análisis y modelos de machine learning.
 ---
-Para mayor información, contactar a carlosd2.rodriguez@gmail.com o a mttoia.com.
+#### Para mayor información, contactar a carlosd2.rodriguez@gmail.com o a mttoia.com.
 ---
 
 ## Contexto del curso
