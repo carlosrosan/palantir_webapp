@@ -1,7 +1,8 @@
 # Mantenimiento predictivo e inteligencia artificial (Industria 4.0)
 
 Repositorio del curso orientado a **técnicos de automatización industrial** y entornos **Industria 4.0**. Incluye una aplicación python para el aprendizaje en software de gestión de mantenimiento predictivo, integración con MySQL, scripts de despliegue de datos de ejemplo y notebooks de análisis y modelos de machine learning.
-
+---
+Para mayor información, contactar a carlosd2.rodriguez@gmail.com o a mttoia.com.
 ---
 
 ## Contexto del curso
@@ -10,7 +11,7 @@ El objetivo es entrenar un **algoritmo de clasificación** sobre datos de manten
 
 ---
 
-## Guía de instalación y puesta en marcha (pasos recomendados)
+## Guía rápida de instalación para Windows 10/11 y puesta en marcha (pasos recomendados)
 
 Siga el orden indicado para reproducir el entorno de trabajo del curso.
 
