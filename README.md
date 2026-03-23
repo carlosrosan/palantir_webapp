@@ -104,25 +104,6 @@ Ejecute las celdas **en orden** tras tener datos en la base y el ETL ejecutado c
 
 ---
 
-## Aplicación web Django (opcional en el curso)
-
-Si desea levantar la interfaz web del proyecto:
-
-1. Ajuste la base de datos en `palantir_webapp/settings.py`.
-2. Ejecute migraciones:
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
-3. (Opcional) Cree un superusuario: `python manage.py createsuperuser`
-4. Servidor de desarrollo:
-   ```bash
-   python manage.py runserver
-   ```
-5. Acceda a `http://127.0.0.1:8000/` y al admin en `/admin/` si corresponde.
-
----
-
 ## Estructura relevante del repositorio
 
 ```
@@ -134,10 +115,7 @@ Si desea levantar la interfaz web del proyecto:
 │   └── faliure_probability_dataframe.py  # ETL → tabla faliure_probability_base
 ├── Ingelearn_curso_mtto_predictivo/
 │   └── 02_modelos_clasificacion.ipynb      # Entrenamiento de modelos
-├── palantir_webapp/              # Configuración Django
-├── maintenance/                  # App de mantenimiento
 ├── requirements.txt
-└── manage.py
 ```
 
 ---
